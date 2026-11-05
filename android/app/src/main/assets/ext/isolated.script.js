@@ -356,6 +356,10 @@ function fetchFiltersFromBackground(movieId, episodeNumber) {
         type: "FETCH_FILTERS_BACKGROUND", movieId: movieId, episode: episodeNumber,
         platform: detectPlatform(), domEpisode: nazafaDomEpisodeOrNull(), pageUrl: location.href
     }, (response) => {
+        if (chrome.runtime.lastError) {
+            setTimeout(() => { if (currentMovieId === movieId) currentMovieId = null; }, 3000);
+            return;
+        }
         if (response && response.success) {
             window.activeFilters = response.data.filters || [];
             currentLibraryKey = response.data._libraryKey || movieId;

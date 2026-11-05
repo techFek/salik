@@ -1,8 +1,23 @@
-import "../../shared/filter-core.js";
+
 
 export const SUPPORTED_PLATFORMS = ["netflix", "amazon", "osnplus", "yango", "disney", "shahid", "appletv", "watchit", "tod", "youtube", "starzplay", "jawwy", "stctv", "dailymotion", "beinconnect", "stremio"];
 
 let _libraryCache = {};
+
+export function extractStremioId(rawUrl) {
+    const u = String(rawUrl || "").replace(/%3A/gi, ":");
+    const m = u.match(/\/(?:movie|series)\/(tt\d{7,9})(?:\/(tt\d{7,9}(?::\d+:\d+)?))?/i);
+    if (m) return m[2] || m[1];
+    const ep = u.match(/(tt\d{7,9}:\d+:\d+)/i);
+    if (ep) return ep[1];
+    const t = u.match(/(tt\d{7,9})/i);
+    return t ? t[1] : null;
+}
+
+export function isPlatformHidden(item, platform) {
+    if (platform !== "stremio" || !item || !item.platforms) return false;
+    return Object.keys(item.platforms).some(k => k !== "stremio" && item.platforms[k] && (item.platforms[k].url || item.platforms[k].id));
+}
 
 export function getUrlForPlatform(item, platform) {
     if (item && item.platforms && item.platforms[platform] && item.platforms[platform].url) {
@@ -29,9 +44,9 @@ export async function getCurrentTabInfo() {
         }
     } catch (e) {}
 
-    const imdbMatch = url.match(/(tt\d{7,8})/i);
-    if (imdbMatch && imdbMatch[1] && url.includes("stremio.com")) {
-        return { platform: "stremio", movieId: imdbMatch[1] };
+    if (url.includes("stremio.com")) {
+        const sid = extractStremioId(url);
+        if (sid) return { platform: "stremio", movieId: sid };
     }
 
     let pathname = "";
@@ -107,6 +122,7 @@ export function findMovieByPlatformId(library, platform, urlId) {
         const item = library[id];
         if (!item) continue;
         if (String(id) === String(urlId)) return { key: id, item };
+        if (platform === "stremio" && item.type === "episode" && /^tt\d+$/i.test(String(urlId))) continue;
         const platformEntry = item.platforms && item.platforms[platform];
         if (platformEntry && (
             String(platformEntry.id) === String(urlId) ||
@@ -124,7 +140,9 @@ export async function fetchLibrary() {
     }
     try {
         const result = await new Promise((resolve) => {
+            const timer = setTimeout(() => resolve({ success: false, error: "timeout" }), 15000);
             chrome.runtime.sendMessage({ type: "FETCH_LIBRARY_DATA" }, (res) => {
+                clearTimeout(timer);
                 resolve(chrome.runtime.lastError ? { success: false, error: chrome.runtime.lastError.message } : res);
             });
         });
@@ -192,6 +210,7 @@ export const normalizeToGroupKey = Core.normalizeToGroupKey;
 export const matchSubcategory = Core.matchSubcategory;
 export const matchAllSubcategories = Core.matchAllSubcategories;
 export const classifyFilter = Core.classify;
+export const groupsOf = Core.groupsOf;
 export const shouldFilter = Core.shouldFilter;
 export const categorizeFiltersDetailed = Core.categorizeFiltersDetailed;
 export const titleGroupStates = Core.titleGroupStates;
@@ -346,20 +365,6 @@ export function compressImageToDataUrl(url, targetWidth, targetHeight) {
         img.src = url;
     });
 }
-
-export async function getSession() {
-    const sessionData = await new Promise(resolve => chrome.storage.local.get(['nazafaSession'], resolve));
-    return sessionData.nazafaSession || null;
-}
-
-export async function getSubscriptionStatus() {
-    return new Promise(resolve => {
-        chrome.runtime.sendMessage({ type: "GET_SUBSCRIPTION_STATUS" }, (res) => {
-            resolve(chrome.runtime.lastError ? { isPremium: false } : res);
-        });
-    });
-}
-
 
 export async function getActiveTabMeta() {
     try {

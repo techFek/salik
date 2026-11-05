@@ -113,110 +113,14 @@ chrome.runtime.onMessage.addListener((request) => {
     }
 });
 
-const NAZAFA_SUBCATEGORY_SCHEMA = {
-    nudity: { subcategories: [
-        { key: "kissing", keywords: ["يقبل", "تقبل", "تقبيل", "قبلة", "القبل", "بوس", "حضن", "تحضن", "عناق", "تعانق", "kiss"] },
-        { key: "relations", keywords: ["زنا", "يزنون", "اباحي", "اباحية", "علاقة حميمية", "حميمية", "فتاة الليل", "يتضاجعان", "affair", "intimate"] },
-        { key: "lgbtq", keywords: ["تشبه الرجال بالنساء", "رجل يلبس النقاب", "لبس رجل للنقاب", "رجل يلبس فستان", "متنكر كامرأة", "متنكر كمربية", "يرتدي ملابس نساء", "شاذ", "لوطي", "متحول جنسيا", "ظهور علم المثليين", "علم المثليين", "lgbtq"] },
-        { key: "exposure", keywords: ["عري", "عاري", "عارية", "عراة", "تعري", "يخلع", "خالع", "ملط", "تغري", "يغري", "اغراء", "إغراء", "ايحاء", "إيحاء", "ايحائي", "ايحائية", "إيحائي", "إيحائية", "اشارة جنسية", "إشارة جنسية", "تعليق جنسي", "تعليق عري", "نكتة اباحية", "تحرش", "متحرش", "مغازلة", "يغازل", "رقص اغرائي", "الراقصة", "وضع مخل", "ديسكو", "نساء يرقصن", "sexy", "naked", "nudity", "boobs"] },
-        { key: "attire", keywords: ["مكشوف", "مكشوفة", "تكشف", "ظاهرة", "ظاهر", "بارزة", "بارز", "بكيني", "ملابس", "مؤخرة", "مؤخرته", "مؤخرتها", "مؤخرتهم", "مؤخرات", "مؤخراتهم", "عورة", "عورته", "عورتها", "عورات", "مفاتن", "لبس مثير", "لبس كاشف", "يبرز", "فستان كاشف", "دمية تلبس حمالة صدر", "ظهور اسفل ظهر", "revealing", "panties"] }
-    ] },
-    violence: { subcategories: [
-        { key: "weapons", keywords: ["سلاح", "سيف", "سكين", "خنجر", "قتل", "مقتول", "مقتولة", "طلقة", "رصاصة", "قطع رأس", "شنق", "مشنوق", "مشنوقة", "ميت", "حرق", "حترق", "احتراق", "انفجار", "غرق", "جثة", "حرب عنيفة", "رقاب اشخاص", "gun", "weapon", "kill", "murder", "uzi"] },
-        { key: "abuse", keywords: ["ضرب", "صفع", "طعن", "تعذيب", "خنق", "ذبح", "جلد", "سحل", "إخصاء", "اجهاض", "كسر ذراع", "دهس", "مضاربة", "abuse", "torture", "beating"] },
-        { key: "disturbing", keywords: ["قيء", "تقيأ", "تكرع", "بصق", "تجشأ", "تغوط", "ضرطة", "ضراط", "يضرط", "غازات", "مقزز", "مقرف", "مقرفة", "فضلات", "مشوه", "مشوهة", "مفقوعة", "تبول", "يخرج من بطن", "نصف بشري", "disturbing", "vomit", "gross", "poop", "pee"] },
-        { key: "gore", keywords: ["دماء", "دم يخرج", "الدم", "دامي", "مضرج", "جرح", "أشلاء", "نزيف", "ينزف", "gore", "blood"] }
-    ] },
-    language: { subcategories: [
-        { key: "blasphemy", keywords: ["مقدس", "الإله", "إله", "الاله", "تهكم عن الله", "تهكم عن الاله", "استهزاء بالدين", "سخرية من الدين", "تلبس النقاب وتسرق", "hell", "goddamn", "jesus", "christ", "lord"] },
-        { key: "impiety", keywords: ["والنبي", "وحياة", "وحيات", "وحياه", "والنعمة", "وشرف", "ورحمة", "بالذمة", "بذمتك", "بزمتك", "وديني", "روح امك", "نهار اسود", "الحلف بغير الله", "دعاء لغير الله", "بشرفي", "وشرفي", "ليه يارب مخلقتنيش ولد", "البقية في حياتك", "يا لهوي", "احيه", "شيء الله لا يستطيع فعله"] },
-        { key: "curses", keywords: ["بن الجزمة", "ابن الحرام", "كلب", "كلاب", "بقف", "نطع", "يا نهار اسود", "يانهار اسود", "نهارك اسود", "يا نهار ابوك اسود", "يا نهار ازرق", "يا نهار اسود ومنيل", "يا نهارك اسود ومنيل", "الزفت", "زفت", "يخرب بيتك", "يخربيت امك", "يا روح امك", "يلعن", "شتائم", "screw", "screwing", "screwed", "bastard", "motherfucker", "motherfucher", "bitch", "fu*kinm"] },
-        { key: "profanity", keywords: ["بذيء", "fuck", "fucking", "fuckin", "shit", "bullshit", "ass", "asshole", "dick", "prick", "crap", "damn", "bloody", "pissed", "piss", "butt", "bollocks", "arse", "كلمة قبيحة", "نكتة قبيحة", "أفعال قبيحة"] },
-        { key: "insults", keywords: ["غبي", "جزمة", "عبيط", "زبالة", "متخلف", "حيوان", "واطي", "واطية", "العويل", "عويل", "حمار", "الحمير", "وسخ", "الوسخة", "وساخة", "حقير", "قذر", "قذرة", "هبل", "اهبل", "نجس", "جاموسة", "ابن المجنونة", "ابن الصرمة", "ابن الشمامة", "معفن", "معفنة", "المعفن", "يا سافلة", "احمق", "لطخ", "creep", "stupid", "idiot", "idiots", "dumb", "dope", "fool", "fools", "moron", "loser", "jerk", "pathetic", "freak", "lame", "bugger", "dummy", "ugly", "scum", "scumbag", "lowlife", "nitwit", "dummies", "douche", "douchebag", "imbecile"] },
-        { key: "sexual", keywords: ["hot", "sex", "sexy", "naked", "horny", "pedo", "penis", "pussy", "cock", "cocksucker", "scrotum", "suck", "sucked", "sucking", "hump", "shag", "whore", "slut", "playboy", "porn", "nude", "hook up", "sleeping with", "sleep with", "prostitution", "المزة", "مزة", "مزز", "فاجرة", "الفاجرة", "فاجره", "الفاجره"] },
-        { key: "substanceTalk", keywords: ["beer", "wine"] }
-    ] },
-    substance: { subcategories: [
-        { key: "smoking", keywords: ["سيجارة", "سجائر", "سجارة", "سيجار", "سيغار", "تدخين", "دخن", "شيشة", "أرجيلة", "الأرجيلة", "الغليون", "cigarette", "smoking", "cigarates"] },
-        { key: "alcohol", keywords: ["خمر", "خمور", "كحول", "بيرة", "بيره", "جعة", "سكران", "مخمور", "يترنح", "شامبانيا", "غيبسون", "مارغاريت", "مارجاريت", "تكيلا", "wine", "beer", "alcohol", "drunk", "rum", "whiskey", "vodka", "gin", "tequila"] },
-        { key: "drugs", keywords: ["مخدرات", "مخدر", "حشيش", "ترامادول", "كوكايين", "هروين", "استروكس", "بانجو", "بودرة", "حبوب", "حبة", "جوينت", "بودرجي", "drugs", "narcotic", "pcp", "weed", "joint", "cocaine", "pot", "crack"] },
-        { key: "gambling", keywords: ["قمار", "مقامرة", "يراهن", "مراهنة", "gambling"] }
-    ] }
-};
-
-function nazafaNormalizeToGroupKey(rawCategory) {
-    const cat = (rawCategory || "").toLowerCase();
-    if (cat.includes("nudity") || cat.includes("sex")) return "nudity";
-    if (cat.includes("violence") || cat.includes("blood")) return "violence";
-    if (cat.includes("language") || cat.includes("profanity")) return "language";
-    return "substance";
-}
-
-function nazafaNormalizeArabic(str) {
-    if (!str) return "";
-    return str
-        .replace(/[ً-ٰٟ]/g, "")
-        .replace(/[إأآٱ]/g, "ا")
-        .replace(/ى/g, "ي")
-        .replace(/ـ/g, "");
-}
-
-function nazafaBuildHaystack(filterItem) {
-    const raw = [filterItem.reason, filterItem.original_description]
-        .filter(Boolean).join(" ").toLowerCase();
-    return nazafaNormalizeArabic(raw);
-}
-
-function nazafaKeywordMatches(haystack, keywords) {
-    return keywords.some((kw) => haystack.includes(nazafaNormalizeArabic(kw.toLowerCase())));
-}
-
-function nazafaMatchSubcategory(groupKey, filterItem) {
-    const group = NAZAFA_SUBCATEGORY_SCHEMA[groupKey];
-    if (!group || !filterItem) return "other";
-    const haystack = nazafaBuildHaystack(filterItem);
-    for (const sub of group.subcategories) {
-        if (nazafaKeywordMatches(haystack, sub.keywords)) return sub.key;
-    }
-    return "other";
-}
-
-function nazafaMatchAllSubcategories(filterItem) {
-    if (!filterItem) return [];
-    const matches = [];
-    const haystack = nazafaBuildHaystack(filterItem);
-    for (const groupKey of Object.keys(NAZAFA_SUBCATEGORY_SCHEMA)) {
-        const group = NAZAFA_SUBCATEGORY_SCHEMA[groupKey];
-        for (const sub of group.subcategories) {
-            if (nazafaKeywordMatches(haystack, sub.keywords)) {
-                matches.push({ groupKey, subKey: sub.key });
-            }
-        }
-    }
-    if (matches.length) return matches;
-    return [{ groupKey: nazafaNormalizeToGroupKey(filterItem.category), subKey: "other" }];
-}
+const NazafaCore = globalThis.SalikFilterCore;
 
 function nazafaShouldFilterItem(filterItem) {
-    const matches = nazafaMatchAllSubcategories(filterItem);
-    for (const { groupKey, subKey } of matches) {
-        const groupSettings = filterSettings[groupKey];
-        if (!groupSettings) continue;
-        if (groupSettings.enabled === false) continue;
-        if (subKey !== "other" && groupSettings.subs[subKey] === false) continue;
-        return true;
-    }
-    return false;
+    return NazafaCore.shouldFilter(filterItem, filterSettings);
 }
 
 function nazafaBuildDefaultFilterSettings() {
-    const defaults = {};
-    for (const groupKey of Object.keys(NAZAFA_SUBCATEGORY_SCHEMA)) {
-        const subs = {};
-        NAZAFA_SUBCATEGORY_SCHEMA[groupKey].subcategories.forEach((s) => { subs[s.key] = true; });
-        defaults[groupKey] = { enabled: true, subs };
-    }
-    return defaults;
+    return NazafaCore.buildDefaultSettings();
 }
 
 let filterSettings = nazafaBuildDefaultFilterSettings();
@@ -227,7 +131,13 @@ let nazafaYtAutoMuteEnabled = true;
 
 function broadcastSubtitleCensorSetting() {
     const insultsEnabled = !!(filterSettings.language && filterSettings.language.enabled !== false && filterSettings.language.subs && filterSettings.language.subs.insults !== false);
-    broadcastToAllFrames({ type: "NAZAFA_SUBTITLE_CENSOR_SETTING", enabled: nazafaSubtitleCensorEnabled, insultsEnabled, ytAutoMute: nazafaYtAutoMuteEnabled });
+    const groups = {};
+    const subs = {};
+    Object.keys(filterSettings).forEach((g) => {
+        groups[g] = filterSettings[g].enabled !== false;
+        subs[g] = Object.assign({}, filterSettings[g].subs || {});
+    });
+    broadcastToAllFrames({ type: "NAZAFA_SUBTITLE_CENSOR_SETTING", enabled: nazafaSubtitleCensorEnabled, insultsEnabled, ytAutoMute: nazafaYtAutoMuteEnabled, groups, subs });
 }
 
 chrome.storage.sync.get(['nazafaSubtitleCensorEnabled', 'nazafaYtAutoMuteEnabled'], (res) => {
@@ -278,14 +188,12 @@ chrome.runtime.onMessage.addListener((request) => {
     if (request.type === "UPDATE_FILTER_SETTINGS") {
         userSettings[request.category] = request.enabled;
         if (filterSettings[request.category]) filterSettings[request.category].enabled = request.enabled;
-        if (request.category === "language") broadcastSubtitleCensorSetting();
+        broadcastSubtitleCensorSetting();
     }
     if (request.type === "UPDATE_SUBCATEGORY_SETTINGS" && filterSettings[request.category]) {
         filterSettings[request.category].subs[request.subKey] = request.enabled;
-        if (request.category === "language" && request.subKey === "insults") {
-            userSettings.insults = !!request.enabled;
-            broadcastSubtitleCensorSetting();
-        }
+        if (request.category === "language" && request.subKey === "insults") userSettings.insults = !!request.enabled;
+        broadcastSubtitleCensorSetting();
     }
     if (request.type === "UPDATE_SUBTITLE_CENSOR_SETTING") {
         nazafaSubtitleCensorEnabled = !!request.enabled;
@@ -327,6 +235,7 @@ function detectPlatform() {
     if (host.includes("beinconnect") || host.includes("bein")) return "beinconnect";
     if (host.includes("tv.apple.com")) return "appletv";
     if (host.includes("stremio")) return "stremio"; 
+    try { if (window.__SALIK_STREMIO_ORIGIN && location.origin === window.__SALIK_STREMIO_ORIGIN) return "stremio"; } catch (e) {}
     return "general";
 }
 
@@ -345,7 +254,7 @@ function getMovieId() {
     const hashIndex = url.indexOf('#');
     const pathname = hashIndex !== -1 ? url.slice(hashIndex + 1).split('?')[0] : window.location.pathname;
     let detectedId = null;
-    if (window.location.hostname.toLowerCase().includes("stremio")) {
+    if (window.location.hostname.toLowerCase().includes("stremio") || detectPlatform() === "stremio") {
         const sid = extractStremioId(url);
         if (sid) return sid;
     }
@@ -414,6 +323,11 @@ function getMovieId() {
 }
 
 function extractEpisodeNumberFromDOM() {
+    const n = nazafaDomEpisodeOrNull();
+    return n !== null ? n : currentEpisodeNumber;
+}
+
+function nazafaDomEpisodeOrNull() {
     try {
         const selectors = ['.f1v67gbe', '.skip-text', '[data-automation-id="player-title"]', '.playback-title'];
         for (let selector of selectors) {
@@ -425,28 +339,24 @@ function extractEpisodeNumberFromDOM() {
             }
         }
     } catch (e) {}
-    return currentEpisodeNumber;
+    return null;
 }
 
 function getActiveVideoElement() {
     const videos = Array.from(document.querySelectorAll('video'));
     if (videos.length === 0) return null;
-    const realVideos = videos.filter(video => {
-        try {
-            if (video.offsetWidth === 0 || video.offsetHeight === 0) return false;
-            if (video.duration && video.duration < 300) return false;
-            return true;
-        } catch (e) { return false; }
-    });
+    const realVideos = NazafaCore.titleVideoCandidates(videos);
     if (realVideos.length === 0) return null;
     if (realVideos.length === 1) return realVideos[0];
     return realVideos.sort((a, b) => (b.offsetWidth * b.offsetHeight) - (a.offsetWidth * a.offsetHeight))[0];
 }
 
 function fetchFiltersFromBackground(movieId, episodeNumber) {
-    chrome.runtime.sendMessage({ type: "FETCH_FILTERS_BACKGROUND", movieId: movieId, episode: episodeNumber }, (response) => {
+    chrome.runtime.sendMessage({
+        type: "FETCH_FILTERS_BACKGROUND", movieId: movieId, episode: episodeNumber,
+        platform: detectPlatform(), domEpisode: nazafaDomEpisodeOrNull(), pageUrl: location.href
+    }, (response) => {
         if (chrome.runtime.lastError) {
-            // القناة اتقفلت (الـ service worker نام أو الصفحة اتغيرت): جرّب تاني بعد 3 ثواني
             setTimeout(() => { if (currentMovieId === movieId) currentMovieId = null; }, 3000);
             return;
         }
@@ -514,12 +424,14 @@ function brainLoop(timestamp) {
 
 function processActiveFilters() {
     if (!window.activeFilters || window.activeFilters.length === 0) {
+        nazafaNearFilter = false;
+        nazafaReleaseEngineState();
         return;
     }
     if (isExecutingAction) return;
 
     const video = getActiveVideoElement();
-    if (!video) return;
+    if (!video) { nazafaReleaseEngineState(); return; }
     reportVideoDurationIfChanged(video);
 
     const platform = detectPlatform();
@@ -567,74 +479,82 @@ function processActiveFilters() {
     }
 
 
-    const currentFilter = window.activeFilters.find(f => {
-        if (f && disabledFilterIds[f.id]) return false;
-
-        const start = parseFloat(f.start_time ?? f.start);
-        const end = parseFloat(f.end_time ?? f.end ?? (start + 1.5));
-        return time >= start - NAZAFA_ACTION_LEAD_S && time <= end;
+    const resolved = NazafaCore.resolveActiveFilters(window.activeFilters, time, {
+        disabledIds: disabledFilterIds,
+        settings: filterSettings,
+        lead: NAZAFA_ACTION_LEAD_S,
+        nearWindow: NAZAFA_NEAR_WINDOW_S
     });
-    nazafaNearFilter = !!currentFilter || window.activeFilters.some((f) => {
-        if (!f || disabledFilterIds[f.id]) return false;
-        const start = parseFloat(f.start_time ?? f.start);
-        return start - time > -1 && start - time < NAZAFA_NEAR_WINDOW_S;
-    });
+    nazafaNearFilter = resolved.near;
 
-    if (currentFilter) {
-        if (nazafaLastMatchedFilterId !== currentFilter.id) { nazafaLastMatchedFilterId = currentFilter.id; console.log("✅ Nazafa Brain: Match Found!"); }
+    const primary = resolved.skip || resolved.blur || resolved.mute;
+    if (primary && nazafaLastMatchedFilterId !== primary.id) { nazafaLastMatchedFilterId = primary.id; console.log("✅ Nazafa Brain: Match Found!"); }
+    if (!primary) nazafaLastMatchedFilterId = null;
 
-        const action = (currentFilter.action_type || currentFilter.action || "").toLowerCase().trim();
+    if (resolved.skip) {
+        const targetEnd = NazafaCore.timing(resolved.skip).end;
+        isExecutingAction = true;
+        const disneyDelta = (platform === "disney" ? targetEnd + 0.4 : targetEnd) - time;
+        broadcastToAllFrames({ type: "NAZAFA_EXECUTE_ACTION", action: "skip", targetTime: targetEnd - platformOffset, disneyDelta: disneyDelta, platform: platform });
 
-        if (!nazafaShouldFilterItem(currentFilter)) return;
-
-        const targetEnd = parseFloat(currentFilter.end_time ?? currentFilter.end);
-
-        if (action === "skip") {
-            isExecutingAction = true;
-            const disneyDelta = (platform === "disney" ? targetEnd + 0.4 : targetEnd) - time;
-            broadcastToAllFrames({ type: "NAZAFA_EXECUTE_ACTION", action: "skip", targetTime: targetEnd - platformOffset, disneyDelta: disneyDelta, platform: platform });
-
-            if (platform === "disney") {
-                disneyPlayheadSeconds = (targetEnd - platformOffset) + 0.75;
-                disneyPlayheadReceivedAt = Date.now();
-                disneyPlayheadVideoTimeAtReceipt = video.currentTime + disneyDelta;
-                disneyLivePositionSeconds = (targetEnd - platformOffset) + 0.75;
-                disneyLivePositionReceivedAt = Date.now();
-            }
-
-            setTimeout(() => { isExecutingAction = false; }, 1000);
-        } else if (action === "mute") {
-            broadcastToAllFrames({ type: "NAZAFA_EXECUTE_ACTION", action: "mute" });
-        } else if (action === "blur") {
-            broadcastToAllFrames({
-                type: "NAZAFA_EXECUTE_ACTION",
-                action: "blur",
-                description: currentFilter.original_description || "تم تغبيش هذا المشهد"
-            });
-        } else if (action === "partial_blur") {
-            const region = currentFilter.blur_region;
-            const validRegion = region && typeof region.x === "number" && typeof region.y === "number"
-                && typeof region.width === "number" && typeof region.height === "number";
-            if (validRegion) {
-                broadcastToAllFrames({
-                    type: "NAZAFA_EXECUTE_ACTION",
-                    action: "partial_blur",
-                    region: region,
-                    description: currentFilter.original_description || "تم تغبيش جزء من هذا المشهد"
-                });
-            } else {
-                console.warn("⚠️ Nazafa: فلتر partial_blur من غير blur_region صالح — رجعنا للتغبيش الكامل كاحتياط:", currentFilter);
-                broadcastToAllFrames({
-                    type: "NAZAFA_EXECUTE_ACTION",
-                    action: "blur",
-                    description: currentFilter.original_description || "تم تغبيش هذا المشهد"
-                });
-            }
+        if (platform === "disney") {
+            disneyPlayheadSeconds = (targetEnd - platformOffset) + 0.75;
+            disneyPlayheadReceivedAt = Date.now();
+            disneyPlayheadVideoTimeAtReceipt = video.currentTime + disneyDelta;
+            disneyLivePositionSeconds = (targetEnd - platformOffset) + 0.75;
+            disneyLivePositionReceivedAt = Date.now();
         }
-    } else {
-        nazafaLastMatchedFilterId = null;
-        broadcastToAllFrames({ type: "NAZAFA_EXECUTE_ACTION", action: "unmute" });
-        broadcastToAllFrames({ type: "NAZAFA_EXECUTE_ACTION", action: "unblur" });
+
+        setTimeout(() => { isExecutingAction = false; }, 1000);
+        return;
     }
+
+    nazafaApplyEngineState(resolved.mute, resolved.blur, platform);
+}
+
+let nazafaEngineMuted = false;
+let nazafaEngineBlurKey = null;
+let nazafaLastKeepAliveAt = 0;
+const NAZAFA_KEEPALIVE_MS = 300;
+
+function nazafaBlurMessage(f) {
+    if (NazafaCore.actionOf(f) === "partial_blur") {
+        const region = f.blur_region;
+        const validRegion = region && typeof region.x === "number" && typeof region.y === "number"
+            && typeof region.width === "number" && typeof region.height === "number";
+        if (validRegion) {
+            return { type: "NAZAFA_EXECUTE_ACTION", action: "partial_blur", region: region, description: f.original_description || "تم تغبيش جزء من هذا المشهد" };
+        }
+        console.warn("⚠️ Nazafa: فلتر partial_blur من غير blur_region صالح — رجعنا للتغبيش الكامل كاحتياط:", f);
+    }
+    return { type: "NAZAFA_EXECUTE_ACTION", action: "blur", description: f.original_description || "تم تغبيش هذا المشهد" };
+}
+
+function nazafaApplyEngineState(muteFilter, blurFilter, platform) {
+    const now = Date.now();
+    const keepAlive = now - nazafaLastKeepAliveAt >= NAZAFA_KEEPALIVE_MS;
+
+    if (muteFilter) {
+        if (!nazafaEngineMuted || keepAlive) broadcastToAllFrames({ type: "NAZAFA_EXECUTE_ACTION", action: "mute" });
+        nazafaEngineMuted = true;
+    } else if (nazafaEngineMuted) {
+        broadcastToAllFrames({ type: "NAZAFA_EXECUTE_ACTION", action: "unmute" });
+        nazafaEngineMuted = false;
+    }
+
+    const blurKey = blurFilter ? (blurFilter.id + ":" + NazafaCore.actionOf(blurFilter)) : null;
+    if (blurFilter) {
+        if (blurKey !== nazafaEngineBlurKey || keepAlive) broadcastToAllFrames(nazafaBlurMessage(blurFilter));
+        nazafaEngineBlurKey = blurKey;
+    } else if (nazafaEngineBlurKey !== null) {
+        broadcastToAllFrames({ type: "NAZAFA_EXECUTE_ACTION", action: "unblur" });
+        nazafaEngineBlurKey = null;
+    }
+
+    if (keepAlive) nazafaLastKeepAliveAt = now;
+}
+
+function nazafaReleaseEngineState() {
+    nazafaApplyEngineState(null, null, detectPlatform());
 }
 requestAnimationFrame(brainLoop);

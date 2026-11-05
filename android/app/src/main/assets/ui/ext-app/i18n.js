@@ -38,7 +38,7 @@ const DICT = {
     "الشيفرة المصدرية على GitHub": "Source code on GitHub",
     "منصة تصفح": "Browsing platform",
     "حمّل سالك على أجهزتك الأخرى": "Get Salik on your other devices",
-    "قريباً": "Coming soon", "قريباً على أندرويد تي في": "Coming soon to Android TV",
+    "حمّله من": "Get it on", "حمّل نسخة أندرويد تي في من GitHub": "Get the Android TV version on GitHub",
     "جاري الفحص والربط مع قاعدة البيانات...": "Checking the library...",
     "لم يتم العثور على فلاتر لهذا العمل": "No filters found for this title",
     "لا يوجد عمل نشط حالياً": "No active title right now",

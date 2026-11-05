@@ -113,6 +113,7 @@
         "https://stremio.com/*"
       ],
       "js": [
+        "shared/filter-core.js",
         "isolated.script.js",
         "subtitle-censor-core.js",
         "subtitles.script.js"
@@ -169,6 +170,7 @@
         "https://stremio.com/*"
       ],
       "js": [
+        "shared/filter-core.js",
         "main.script.js"
       ],
       "run_at": "document_end",
