@@ -696,7 +696,7 @@ function App() {
             const categorized = S.categorizeFiltersDetailed(currentFilters);
             const catItems = categorized[catKey].items;
             for (const it of catItems) {
-                if (S.matchAllSubcategories(it).length > 1) continue;
+                if (!S.belongsOnlyTo(it, catKey)) continue;
                 await S.setFilterEnabled(currentItem.key, it.id, false);
             }
             const dm = await S.getDisabledFiltersMap(currentItem.key);
@@ -718,7 +718,7 @@ function App() {
             const detailed = S.categorizeFiltersDetailed(currentFilters);
             const subItems = detailed[catKey].bySub[subKey] || [];
             for (const it of subItems) {
-                if (S.matchAllSubcategories(it).length > 1) continue;
+                if (!S.belongsOnlyTo(it, catKey, subKey)) continue;
                 await S.setFilterEnabled(currentItem.key, it.id, false);
             }
             const dm = await S.getDisabledFiltersMap(currentItem.key);

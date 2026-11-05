@@ -211,6 +211,7 @@ export const matchSubcategory = Core.matchSubcategory;
 export const matchAllSubcategories = Core.matchAllSubcategories;
 export const classifyFilter = Core.classify;
 export const groupsOf = Core.groupsOf;
+export const belongsOnlyTo = Core.belongsOnlyTo;
 export const shouldFilter = Core.shouldFilter;
 export const categorizeFiltersDetailed = Core.categorizeFiltersDetailed;
 export const titleGroupStates = Core.titleGroupStates;

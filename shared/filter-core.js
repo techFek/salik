@@ -122,7 +122,9 @@
     }
 
     const ARABIC_RE = /[؀-ۿ]/;
-    const ARABIC_LETTER_CLASS = "\\u0621-\\u064A\\u066E-\\u06D3\\u06FA-\\u06FF";
+    /* Same boundaries as subtitle-censor-core.js: no letter or digit (any script) on either side. */
+    const WORD_BOUNDARY_BEFORE = "(?<![\\p{L}\\p{N}])";
+    const WORD_BOUNDARY_AFTER = "(?![\\p{L}\\p{N}])";
     const ARABIC_PREFIX = "(?:[وف]?(?:[بلك]?ال|لل|[بلك])?)";
     const NO_KAF_PREFIX = new Set(["بيرة", "بيره"].map(normalizeArabic));
 
@@ -137,7 +139,7 @@
             const body = kw.split(/\s+/).map(escapeRegex).join("\\s+");
             if (ARABIC_RE.test(kw)) {
                 const prefix = NO_KAF_PREFIX.has(kw) ? "(?:[وف]?(?:[بل]?ال|لل|[بل])?)" : ARABIC_PREFIX;
-                re = new RegExp("(?<![" + ARABIC_LETTER_CLASS + "\\p{N}])" + prefix + body + "(?![" + ARABIC_LETTER_CLASS + "])", "u");
+                re = new RegExp(WORD_BOUNDARY_BEFORE + prefix + body + WORD_BOUNDARY_AFTER, "u");
             } else {
                 re = new RegExp("(?<![a-z0-9])" + body + "(?![a-z0-9])", "i");
             }
@@ -178,6 +180,19 @@
 
     function matchAllSubcategories(filterItem) {
         return classify(filterItem).map(({ groupKey, subKey }) => ({ groupKey, subKey }));
+    }
+
+    /*
+     * True when the scene belongs to groupKey only (and, with subKey, to that one sub-category only).
+     * Used before turning a scene off for a whole group/sub-category, so scenes shared with another
+     * group or sub-category are left alone.
+     */
+    function belongsOnlyTo(filterItem, groupKey, subKey) {
+        const parts = classify(filterItem);
+        if (parts.length !== 1 || parts[0].groupKey !== groupKey) return false;
+        if (subKey === undefined) return true;
+        const keys = parts[0].subKeys;
+        return keys.length === 0 ? subKey === OTHER_SUBKEY : (keys.length === 1 && keys[0] === subKey);
     }
 
     function groupAllows(groupSettings, subKeys) {
@@ -424,7 +439,7 @@
     const api = {
         SUBCATEGORY_SCHEMA: SCHEMA, GROUP_KEYS, OTHER_SUBKEY,
         normalizeToGroupKey, groupsOf, normalizeArabic, buildHaystack,
-        keywordInText, keywordMatches, matchSubcategory, classify, matchAllSubcategories,
+        keywordInText, keywordMatches, matchSubcategory, classify, matchAllSubcategories, belongsOnlyTo,
         shouldFilter, buildDefaultSettings, categorizeFiltersDetailed, categorizeFilters,
         titleGroupStates, toggleTitleGroupStore, subtitleCategoryEnabled,
         timing, actionOf, resolveActiveFilters, createMuteArbiter, validateLibrary,
