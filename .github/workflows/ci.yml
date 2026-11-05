@@ -10,5 +10,7 @@ jobs:
           node-version: 22
       - name: Android copies match the extension
         run: node scripts/sync-android.js --check
+      - name: Library is valid
+        run: node scripts/validate-library.js library.json && node scripts/validate-library.js library/
       - name: Tests
         run: node --test
