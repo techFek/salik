@@ -303,14 +303,12 @@
         return isFinite(n) ? n : NaN;
     }
 
-    const END_FALLBACK_S = 1.5;
-
+    /* A scene whose start or end is not a valid number, or whose end is before its start, is ignored. */
     function timing(f) {
         const start = num(f.start_time !== undefined ? f.start_time : f.start);
-        if (!isFinite(start)) return null;
-        const rawEnd = num(f.end_time !== undefined ? f.end_time : f.end);
-        const endValid = isFinite(rawEnd) && rawEnd >= start;
-        return { start, end: endValid ? rawEnd : start + END_FALLBACK_S, endValid };
+        const end = num(f.end_time !== undefined ? f.end_time : f.end);
+        if (!isFinite(start) || !isFinite(end) || end < start) return null;
+        return { start, end, endValid: true };
     }
 
     function actionOf(f) {
@@ -320,7 +318,6 @@
     /*
      * Picks what should happen at `time`. Only scenes that are not disabled for this title and that the
      * settings allow are considered. Skip wins; otherwise blur (or partial_blur) and mute can both apply.
-     * A skip whose end is missing/invalid is never executed.
      */
     function resolveActiveFilters(filters, time, opts) {
         const o = opts || {};
@@ -336,7 +333,7 @@
             if (!shouldFilter(f, o.settings)) return;
             const a = actionOf(f);
             if (a === "skip") {
-                if (tm.endValid && tm.end > time && (!result.skip || tm.end > timing(result.skip).end)) result.skip = f;
+                if (tm.end > time && (!result.skip || tm.end > timing(result.skip).end)) result.skip = f;
             } else if (a === "blur" || a === "partial_blur") {
                 if (!result.blur || (actionOf(result.blur) === "partial_blur" && a === "blur")) result.blur = f;
             } else if (a === "mute") {

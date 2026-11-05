@@ -40,6 +40,20 @@ function filtersByTitle(lib) {
     return out;
 }
 
+function fakeElement() {
+    const el = {
+        style: { setProperty() {}, removeProperty() {}, getPropertyValue() { return ""; } }, dataset: {}, children: [],
+        classList: { add() {}, remove() {}, contains() { return false; }, toggle() {} },
+        appendChild(c) { el.children.push(c); return c; }, append() {}, prepend() {}, insertBefore(c) { return c; }, removeChild() {},
+        setAttribute() {}, getAttribute() { return null; }, removeAttribute() {}, remove() {},
+        querySelector(sel) { return el.__q[sel] || (el.__q[sel] = fakeElement()); }, querySelectorAll() { return []; }, addEventListener() {}, removeEventListener() {},
+        __q: {},
+        getBoundingClientRect: () => ({ left: 0, top: 0, width: 0, height: 0 }), contains() { return false; },
+        textContent: "", innerHTML: "", parentElement: null, parentNode: null
+    };
+    return el;
+}
+
 /* A tiny fake page: enough DOM/window for the engine scripts to load in a vm context. */
 function makePage(opts) {
     const o = opts || {};
@@ -62,17 +76,18 @@ function makePage(opts) {
     };
     const document = {
         readyState: "complete",
-        head: { appendChild() {} },
-        body: { appendChild() {} },
+        head: fakeElement(),
+        body: fakeElement(),
+        documentElement: fakeElement(),
         querySelectorAll: (sel) => (/video/.test(sel) ? videos.filter((v) => !/data-nazafa-blurred/.test(sel) || v.dataset.nazafaBlurred === "1") : []),
         querySelector: (sel) => (/video/.test(sel) ? videos[0] || null : null),
         getElementById: () => null,
-        createElement: () => ({ style: {}, dataset: {}, classList: { add() {}, remove() {} }, appendChild() {}, setAttribute() {}, remove() {} }),
+        createElement: () => fakeElement(),
         addEventListener: (t, fn) => { (docListeners[t] = docListeners[t] || []).push(fn); }
     };
     const location = { hostname: o.hostname || "www.netflix.com", href: o.href || "https://www.netflix.com/watch/81234567", pathname: "/watch/81234567", origin: "https://www.netflix.com" };
     const window = {
-        postMessage: (m) => { posted.push(m); (listeners.message || []).forEach((fn) => fn({ data: m })); },
+        postMessage: (m) => { posted.push(m); (listeners.message || []).forEach((fn) => fn({ data: m, source: ctx, origin: location.origin })); },
         addEventListener: (t, fn) => { (listeners[t] = listeners[t] || []).push(fn); },
         location
     };
@@ -85,15 +100,24 @@ function makePage(opts) {
         HTMLVideoElement: function () {}, Node: function () {}, Element: function () {}, URL, JSON, Math, Date
     };
     ctx.XMLHttpRequest.prototype = { open() {}, send() {} };
+    Object.assign(ctx, {
+        getComputedStyle: () => ({}), navigator: { userAgent: "node" },
+        history: { pushState() {}, replaceState() {} },
+        localStorage: { getItem: () => null, setItem() {}, removeItem() {} }
+    }, o.globals || {});
+    /* In a page, window is the global object. */
+    Object.assign(ctx, window);
+    ctx.window = ctx;
     ctx.globalThis = ctx;
     ctx.self = ctx;
-    window.document = document;
+    ctx.top = ctx;
+    ctx.parent = ctx;
     vm.createContext(ctx);
     return {
         ctx, posted, videos, runtimeListeners, docListeners,
         run(file) { vm.runInContext(fs.readFileSync(file, "utf8"), ctx, { filename: file }); },
         eval(code) { return vm.runInContext(code, ctx); },
-        post(msg) { window.postMessage(msg); }
+        post(msg, source) { (listeners.message || []).forEach((fn) => fn({ data: msg, source: source === undefined ? ctx : source, origin: location.origin })); }
     };
 }
 
@@ -109,4 +133,4 @@ function fakeVideo(over) {
     return v;
 }
 
-module.exports = { ROOT, ANDROID_ASSETS, CORE_PATH, LIBRARY_PATH, quietCore, loadLibrary, allFilters, filtersByTitle, makePage, fakeVideo };
+module.exports = { fakeElement, ROOT, ANDROID_ASSETS, CORE_PATH, LIBRARY_PATH, quietCore, loadLibrary, allFilters, filtersByTitle, makePage, fakeVideo };

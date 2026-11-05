@@ -5,15 +5,52 @@ let isSystemMute = false;
 let nazafaSubtitleCensorEnabled = true;
 let nazafaInsultsEnabled = true;
 let nazafaYtAutoMuteEnabled = true;
+let nazafaLanguageEnabled = true;
+let nazafaGroupEnabled = { nudity: true, violence: true, language: true, substance: true };
+let nazafaSubSettings = {};
 window.addEventListener("message", (event) => {
     if (!event.data || event.data.type !== "NAZAFA_SUBTITLE_CENSOR_SETTING") return;
     nazafaSubtitleCensorEnabled = !!event.data.enabled;
     if (event.data.insultsEnabled !== undefined) nazafaInsultsEnabled = !!event.data.insultsEnabled;
     if (event.data.ytAutoMute !== undefined) nazafaYtAutoMuteEnabled = !!event.data.ytAutoMute;
+    if (event.data.groups && typeof event.data.groups === "object") {
+        nazafaGroupEnabled = Object.assign({}, nazafaGroupEnabled, event.data.groups);
+        nazafaLanguageEnabled = nazafaGroupEnabled.language !== false;
+    }
+    if (event.data.subs && typeof event.data.subs === "object") nazafaSubSettings = event.data.subs;
 });
 
-let nazafaMuteOwner = false;
-let nazafaYtTimedHolding = false;
+let nazafaMuteVideo = null;
+let nazafaMutePlatform = undefined;
+function nazafaMuteIsNetflix() {
+    return nazafaMutePlatform === "netflix" || (!nazafaMutePlatform && typeof netflix !== "undefined");
+}
+function nazafaMuteTarget() {
+    const v = (typeof getActiveVideoElement === "function" && getActiveVideoElement()) || nazafaMuteVideo;
+    if (v) nazafaMuteVideo = v;
+    return v;
+}
+const nazafaMute = globalThis.SalikFilterCore.createMuteArbiter({
+    isMuted() { const v = nazafaMuteTarget(); return v ? nazafaIsSilenced(v, nazafaMutePlatform) : false; },
+    mute() {
+        const v = nazafaMuteTarget(); if (!v) return;
+        isSystemMute = true;
+        nazafaSilence(v, nazafaMutePlatform);
+        if (nazafaMuteIsNetflix()) setNetflixMuted(true);
+        setTimeout(() => { isSystemMute = false; }, 300);
+    },
+    unmute() {
+        const v = nazafaMuteTarget(); if (!v) return;
+        isSystemMute = true;
+        nazafaUnsilence(v, nazafaMutePlatform);
+        if (nazafaMuteIsNetflix()) setNetflixMuted(false);
+        setTimeout(() => { isSystemMute = false; }, 50);
+    }
+});
+function nazafaMuteContext(video, platform) {
+    if (video) nazafaMuteVideo = video;
+    nazafaMutePlatform = platform;
+}
 
 let nazafaLastPlayingAt = 0;
 let nazafaPointerDown = false;
@@ -369,8 +406,9 @@ const NazafaCensorCore = (function () {
     });
 
     function isCategoryEnabled(category) {
-        if (category === "insults") return nazafaInsultsEnabled !== false;
-        return true;
+        const langSubs = Object.assign({}, nazafaSubSettings.language || {});
+        if (nazafaInsultsEnabled === false) langSubs.insults = false;
+        return globalThis.SalikFilterCore.subtitleCategoryEnabled(category, { language: { enabled: nazafaLanguageEnabled, subs: langSubs } });
     }
 
     const EXCEPTION_DOG_ADJECTIVES = ["جيد", "صالح", "وفي", "لطيف", "اليف", "مطيع"].map(normalizeArabicTerm);
@@ -915,13 +953,7 @@ function getActiveVideoElement() {
     const videos = Array.from(document.querySelectorAll('video'));
     if (videos.length === 0) return null;
 
-    const realVideos = videos.filter(video => {
-        try {
-            if (video.offsetWidth === 0 || video.offsetHeight === 0) return false;
-            if (video.duration && video.duration < 300) return false;
-            return true;
-        } catch (e) { return false; }
-    });
+    const realVideos = globalThis.SalikFilterCore.titleVideoCandidates(videos);
     return realVideos.length > 0 ? realVideos.sort((a, b) => b.currentTime - a.currentTime)[0] : null;
 }
 
@@ -1009,24 +1041,12 @@ window.addEventListener("message", (event) => {
                 }, 80);
             };
             video.style.setProperty("opacity", "0", "important");
-            const disneyWasSilenced = nazafaIsSilenced(video, platform);
-            if (!disneyWasSilenced) {
-                isSystemMute = true;
-                nazafaMuteOwner = true;
-                nazafaSilence(video, platform);
-                setTimeout(() => { isSystemMute = false; }, 300);
-            }
+            nazafaMuteContext(video, platform);
+            nazafaMute.acquire("skip-disney");
             const origRevealVideo = revealVideo;
             revealVideo = () => {
                 origRevealVideo();
-                if (!disneyWasSilenced) {
-                    setTimeout(() => {
-                        isSystemMute = true;
-                        nazafaUnsilence(getActiveVideoElement() || video, platform);
-                        nazafaMuteOwner = false;
-                        setTimeout(() => { isSystemMute = false; }, 50);
-                    }, 150);
-                }
+                setTimeout(() => { nazafaMuteContext(getActiveVideoElement() || video, platform); nazafaMute.release("skip-disney"); }, 150);
             };
             setTimeout(() => revealVideo(), 9000);
             const MAX_SAFE_SEEK_STEP = 11;
@@ -1107,59 +1127,41 @@ window.addEventListener("message", (event) => {
             seekSuccessful = true;
         }
 
-        if (seekSuccessful && !nazafaIsSilenced(video, platform)) {
-            isSystemMute = true;
-            nazafaMuteOwner = true;
-            nazafaSilence(video, platform);
-            if (platform === "netflix") setNetflixMuted(true);
-
-            const attemptUnmute = (label) => {
-                isSystemMute = false;
-                const currentVideo = getActiveVideoElement() || video;
-                if (nazafaIsSilenced(currentVideo, platform) && nazafaMuteOwner) {
-                    isSystemMute = true;
-                    nazafaUnsilence(currentVideo, platform);
-                    if (platform === "netflix") setNetflixMuted(false);
-                    setTimeout(() => { isSystemMute = false; }, 50);
-                    return currentVideo;
-                }
-                return null;
-            };
-
+        if (seekSuccessful) {
+            nazafaMuteContext(video, platform);
+            nazafaMute.acquire("skip");
             setTimeout(() => {
-                attemptUnmute("محاولة أولى (600ms)");
+                nazafaMuteContext(getActiveVideoElement() || video, platform);
+                nazafaMute.release("skip");
                 setTimeout(() => {
                     const v = getActiveVideoElement() || video;
-                    if (nazafaIsSilenced(v, platform) && nazafaMuteOwner) {
+                    if (!nazafaMute.holding() && !nazafaMute.userMuted && nazafaIsSilenced(v, platform) && v.dataset.userMuted !== "true") {
                         console.warn(`⚠️ Nazafa: الصوت لسه مكتوم بعد التخطي رغم محاولة إعادة الفتح [platform=${platform}] — المشغّل بيرجّعه كتم بنفسه على الأغلب.`);
                         isSystemMute = true;
                         nazafaUnsilence(v, platform);
-                        setTimeout(() => { isSystemMute = false; nazafaMuteOwner = false; }, 50);
-                    } else {
-                        nazafaMuteOwner = false;
+                        if (platform === "netflix") setNetflixMuted(false);
+                        setTimeout(() => { isSystemMute = false; }, 50);
                     }
                 }, 500);
             }, 600);
         }
     }
     else if (action === "mute") {
-        isSystemMute = true;
-        nazafaMuteOwner = true;
-        nazafaSilence(video, platform);
-        if (platform === "netflix" || (!platform && typeof netflix !== "undefined")) setNetflixMuted(true);
-        setTimeout(() => { isSystemMute = false; }, 300);
+        nazafaMuteContext(video, platform);
+        if (nazafaMute.holding("library")) {
+            nazafaMute.reassert();
+            if (nazafaMute.weMuted && nazafaMuteIsNetflix()) setNetflixMuted(true);
+        } else nazafaMute.acquire("library");
     }
     else if (action === "unmute") {
-        if (nazafaYtTimedHolding) return;
-        if (nazafaMuteOwner || video.dataset.userMuted !== "true") {
-            isSystemMute = true;
-            nazafaUnsilence(video, platform);
-            if (platform === "netflix" || (!platform && typeof netflix !== "undefined")) setNetflixMuted(false);
-            nazafaMuteOwner = false;
-            setTimeout(() => { isSystemMute = false; }, 50);
-        }
+        nazafaMuteContext(video, platform);
+        nazafaMute.release("library");
     }
     else if (action === "blur") {
+        if (video.dataset.nazafaBlurred !== "1") {
+            video.dataset.nazafaPrevFilter = video.style.filter || "";
+            video.dataset.nazafaBlurred = "1";
+        }
         video.style.filter = "blur(40px)";
         showBlurOverlay(video, description);
     }
@@ -1167,7 +1169,11 @@ window.addEventListener("message", (event) => {
         showPartialBlur(video, event.data.region);
     }
     else if (action === "unblur") {
-        video.style.filter = "";
+        document.querySelectorAll("video[data-nazafa-blurred='1']").forEach((v) => {
+            v.style.filter = v.dataset.nazafaPrevFilter || "";
+            delete v.dataset.nazafaBlurred;
+            delete v.dataset.nazafaPrevFilter;
+        });
         hideBlurOverlay();
         hidePartialBlur();
     }
@@ -1177,6 +1183,7 @@ document.addEventListener('volumechange', (e) => {
     if (e.target.tagName === 'VIDEO') {
         if (isSystemMute) return;
         e.target.dataset.userMuted = e.target.muted ? "true" : "false";
+        nazafaMute.userChanged(e.target.muted);
     }
 }, true);
 
@@ -1192,8 +1199,6 @@ document.addEventListener('volumechange', (e) => {
     let noTrackTries = 0, lastTriedVideoId = null;
     let loadedVideoId = null;
     let loadToken = 0;
-    let weMuted = false;
-    let preMuted = false;
 
     function post(active) {
         try { window.postMessage({ type: "NAZAFA_YT_TIMED_ACTIVE", active: !!active }, "*"); } catch (e) {}
@@ -1333,23 +1338,13 @@ document.addEventListener('volumechange', (e) => {
             const video = document.querySelector("video.html5-main-video") || document.querySelector("video");
             if (!video) return;
             const t = video.currentTime * 1000;
-            const inside = nazafaYtAutoMuteEnabled && windows.length && windows.some((w) => t >= w.s && t <= w.e);
-            if (inside && !weMuted) {
-                preMuted = video.muted;
-                if (!preMuted) {
-                    isSystemMute = true; nazafaMuteOwner = true;
-                    video.muted = true;
-                    setTimeout(() => { isSystemMute = false; }, 300);
-                    weMuted = true;
-                    nazafaYtTimedHolding = true;
-                }
-            } else if (!inside && weMuted) {
-                isSystemMute = true;
-                video.muted = false;
-                nazafaMuteOwner = false;
-                setTimeout(() => { isSystemMute = false; }, 50);
-                weMuted = false;
-                nazafaYtTimedHolding = false;
+            const inside = nazafaYtAutoMuteEnabled && nazafaLanguageEnabled && windows.length && windows.some((w) => t >= w.s && t <= w.e);
+            if (inside) {
+                nazafaMuteContext(video, undefined);
+                if (!nazafaMute.holding("yt-subs")) nazafaMute.acquire("yt-subs");
+            } else if (nazafaMute.holding("yt-subs")) {
+                nazafaMuteContext(video, undefined);
+                nazafaMute.release("yt-subs");
             }
         } catch (e) {}
     }
