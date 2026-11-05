@@ -87,7 +87,7 @@ function makePage(opts) {
     };
     const location = { hostname: o.hostname || "www.netflix.com", href: o.href || "https://www.netflix.com/watch/81234567", pathname: "/watch/81234567", origin: "https://www.netflix.com" };
     const window = {
-        postMessage: (m) => { posted.push(m); (listeners.message || []).forEach((fn) => fn({ data: m, source: ctx, origin: location.origin })); },
+        postMessage: (m) => { posted.push(m); (listeners.message || []).forEach((fn) => fn({ data: m, source: innerWindow(), origin: location.origin })); },
         addEventListener: (t, fn) => { (listeners[t] = listeners[t] || []).push(fn); },
         location
     };
@@ -113,11 +113,14 @@ function makePage(opts) {
     ctx.top = ctx;
     ctx.parent = ctx;
     vm.createContext(ctx);
+    /* What scripts inside the context see as `window` (the contextified global, not ctx itself). */
+    let inner = null;
+    function innerWindow() { return inner || (inner = vm.runInContext("window", ctx)); }
     return {
         ctx, posted, videos, runtimeListeners, docListeners,
         run(file) { vm.runInContext(fs.readFileSync(file, "utf8"), ctx, { filename: file }); },
         eval(code) { return vm.runInContext(code, ctx); },
-        post(msg, source) { (listeners.message || []).forEach((fn) => fn({ data: msg, source: source === undefined ? ctx : source, origin: location.origin })); }
+        post(msg, source) { (listeners.message || []).forEach((fn) => fn({ data: msg, source: source === undefined ? innerWindow() : source, origin: location.origin })); }
     };
 }
 

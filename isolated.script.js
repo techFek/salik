@@ -1,10 +1,28 @@
 console.log("🧠 Nazafa Engine: Isolated Brain Active.");
 
+/* Sent with every NAZAFA_* message so main.script.js can tell our messages from the page's. */
+const NAZAFA_NONCE = (typeof crypto !== "undefined" && crypto.randomUUID) ? crypto.randomUUID()
+    : (Math.random().toString(36).slice(2) + Date.now().toString(36) + Math.random().toString(36).slice(2));
+
 function broadcastToAllFrames(message) {
-    window.postMessage(message, "*");
+    const signed = Object.assign({}, message, { nonce: NAZAFA_NONCE });
+    window.postMessage(signed, "*");
     document.querySelectorAll('iframe').forEach(f => {
-        try { f.contentWindow.postMessage(message, "*"); } catch (e) {}
+        try { f.contentWindow.postMessage(signed, "*"); } catch (e) {}
     });
+}
+
+function nazafaSendHello() {
+    try { window.postMessage({ type: "NAZAFA_HELLO", nonce: NAZAFA_NONCE }, "*"); } catch (e) {}
+}
+window.addEventListener("message", (event) => {
+    if (event.source === window && event.data && event.data.type === "NAZAFA_MAIN_READY") nazafaSendHello();
+});
+nazafaSendHello();
+
+/* After the extension is updated or removed, this copy is orphaned: chrome.runtime.id disappears. */
+function nazafaContextAlive() {
+    try { return !!(chrome.runtime && chrome.runtime.id); } catch (e) { return false; }
 }
 
 window.addEventListener("message", (event) => {
@@ -394,6 +412,10 @@ function fetchFiltersFromBackground(movieId, episodeNumber) {
 }
 
 function brainLoop(timestamp) {
+    if (!nazafaContextAlive()) {
+        console.log("Nazafa: extension context gone (updated or removed), engine stopped in this copy.");
+        return;
+    }
     if (timestamp - lastCheckTime > 300) {
         lastCheckTime = timestamp;
 

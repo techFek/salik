@@ -37,7 +37,8 @@ function player(over) {
     const page = H.makePage({ videos: [video] });
     page.run(H.CORE_PATH);
     page.run(path.join(H.ROOT, "main.script.js"));
-    return { page, video, send: (action, extra) => page.post(Object.assign({ type: "NAZAFA_EXECUTE_ACTION", action }, extra || {})) };
+    page.post({ type: "NAZAFA_HELLO", nonce: "test-nonce" });
+    return { page, video, send: (action, extra) => page.post(Object.assign({ type: "NAZAFA_EXECUTE_ACTION", action, nonce: "test-nonce" }, extra || {})) };
 }
 
 const mute = (id, s, e, cat) => ({ id, category: cat || "language", original_description: "يلعن", start: s, end: e, action_type: "mute" });
@@ -139,7 +140,7 @@ test("3: mute sources: unmuted only when all release; the user's own mute is kep
     p.send("mute"); assert.equal(p.video.muted, true);
     p.send("unmute"); assert.equal(p.video.muted, false);
     const u = player({ muted: true });
-    u.page.eval("nazafaMute.userChanged(true)");
+    (u.page.docListeners.volumechange || []).forEach((fn) => fn({ target: u.video }));
     u.send("mute"); u.send("unmute");
     assert.equal(u.video.muted, true, "user mute survives our unmute");
 });

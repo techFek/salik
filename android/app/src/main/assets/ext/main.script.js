@@ -1,3 +1,31 @@
+(function () {
+const NAZAFA_MAIN_VER = "1.0.24";
+if (window.__salikMainVer === NAZAFA_MAIN_VER) return;
+window.__salikMainVer = NAZAFA_MAIN_VER;
+/* A newer copy injected after an update takes over; this one stops its timers and listeners. */
+const nazafaIsCurrent = () => window.__salikMainVer === NAZAFA_MAIN_VER;
+const setInterval = (fn, ms, ...args) => {
+    const id = window.setInterval(() => { if (!nazafaIsCurrent()) { window.clearInterval(id); return; } fn(...args); }, ms);
+    return id;
+};
+
+/*
+ * NAZAFA_* commands are accepted only from isolated.script.js: same window with the nonce it sent in
+ * NAZAFA_HELLO, or the parent frame (whose isolated script drives players in iframes).
+ */
+let NAZAFA_NONCE = null;
+window.addEventListener("message", (event) => {
+    const d = event.data;
+    if (event.source !== window || !d || d.type !== "NAZAFA_HELLO" || NAZAFA_NONCE || typeof d.nonce !== "string") return;
+    NAZAFA_NONCE = d.nonce;
+});
+function nazafaTrusted(event) {
+    if (!nazafaIsCurrent() || !event || !event.data) return false;
+    if (event.source === window) return !!NAZAFA_NONCE && event.data.nonce === NAZAFA_NONCE;
+    try { return window.parent !== window && event.source === window.parent; } catch (e) { return false; }
+}
+try { window.postMessage({ type: "NAZAFA_MAIN_READY" }, "*"); } catch (e) {}
+
 console.log("💪 Nazafa Engine: Main Executor Ready.");
 
 let isSystemMute = false;
@@ -9,7 +37,7 @@ let nazafaLanguageEnabled = true;
 let nazafaGroupEnabled = { nudity: true, violence: true, language: true, substance: true };
 let nazafaSubSettings = {};
 window.addEventListener("message", (event) => {
-    if (!event.data || event.data.type !== "NAZAFA_SUBTITLE_CENSOR_SETTING") return;
+    if (!event.data || event.data.type !== "NAZAFA_SUBTITLE_CENSOR_SETTING" || !nazafaTrusted(event)) return;
     nazafaSubtitleCensorEnabled = !!event.data.enabled;
     if (event.data.insultsEnabled !== undefined) nazafaInsultsEnabled = !!event.data.insultsEnabled;
     if (event.data.ytAutoMute !== undefined) nazafaYtAutoMuteEnabled = !!event.data.ytAutoMute;
@@ -558,6 +586,7 @@ function censorVttPayload(vttText, sourceLabel) {
 const originalFetch = window.fetch;
 if (typeof originalFetch === "function") {
     window.fetch = function (...args) {
+        if (!nazafaIsCurrent()) return originalFetch.apply(this, args);
         try {
             const url = typeof args[0] === "string" ? args[0] : (args[0] && args[0].url) || "";
             if (nazafaIsDisneySessionCandidateUrl(url)) {
@@ -599,6 +628,7 @@ const OriginalXHR = window.XMLHttpRequest;
 const originalOpen = OriginalXHR.prototype.open;
 const originalSend = OriginalXHR.prototype.send;
 OriginalXHR.prototype.open = function (method, url, ...rest) {
+    if (!nazafaIsCurrent()) return originalOpen.call(this, method, url, ...rest);
     try {
         const urlStr = typeof url === "string" ? url : "";
         this.__nazafaIsSubtitle = looksLikeSubtitleUrl(urlStr);
@@ -1014,7 +1044,7 @@ function nazafaUnsilence(video, platform) {
 }
 
 window.addEventListener("message", (event) => {
-    if (!event.data || event.data.type !== "NAZAFA_EXECUTE_ACTION") return;
+    if (!event.data || event.data.type !== "NAZAFA_EXECUTE_ACTION" || !nazafaTrusted(event)) return;
 
     const { action, targetTime, disneyDelta, platform, description } = event.data;
     const video = getActiveVideoElement();
@@ -1352,4 +1382,5 @@ document.addEventListener('volumechange', (e) => {
     setInterval(tick, 30);
     setInterval(loadForCurrentVideo, 1500);
     window.addEventListener("yt-navigate-finish", () => { loadedVideoId = null; setTimeout(loadForCurrentVideo, 300); });
+})();
 })();

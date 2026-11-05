@@ -1,6 +1,14 @@
 
 (function () {
     "use strict";
+    const NAZAFA_SUBS_VER = "1.0.24";
+    if (window.__salikSubsVer === NAZAFA_SUBS_VER) return;
+    window.__salikSubsVer = NAZAFA_SUBS_VER;
+    const nazafaSubsAlive = () => window.__salikSubsVer === NAZAFA_SUBS_VER && (typeof nazafaContextAlive !== "function" || nazafaContextAlive());
+    const setInterval = (fn, ms, ...args) => {
+        const id = window.setInterval(() => { if (!nazafaSubsAlive()) { window.clearInterval(id); return; } fn(...args); }, ms);
+        return id;
+    };
 
     const nazafaIsStremio = window.location.hostname.includes("stremio");
 
