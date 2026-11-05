@@ -170,7 +170,7 @@
         "https://stremio.com/*"
       ],
       "js": [
-        "shared/filter-core.js",
+        "shared/filter-core.main.js",
         "main.script.js"
       ],
       "run_at": "document_end",

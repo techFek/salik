@@ -2,7 +2,7 @@
 /*
  * The extension (repo root) is the only source of the files the Android app shares with it.
  *
- *   node scripts/sync-android.js          copy them into android/
+ *   node scripts/sync-android.js          copy them into android/ (and shared/filter-core.main.js)
  *   node scripts/sync-android.js --check  exit 1 if any copy differs (used by CI)
  */
 "use strict";
@@ -22,12 +22,22 @@ const FILES = [
     ["library.json", "data/library.json"]
 ];
 
+/*
+ * Copies inside the extension itself. Chrome injects a file only once per page, so the MAIN world
+ * gets the shared core under a second name.
+ */
+const ROOT_COPIES = [
+    ["shared/filter-core.js", "shared/filter-core.main.js"]
+];
+
 function compare() {
-    return FILES.map(([src, dst]) => {
+    const rows = FILES.map(([src, dst]) => ({ src, dst, base: ASSETS, label: "android/app/src/main/assets/" + dst }))
+        .concat(ROOT_COPIES.map(([src, dst]) => ({ src, dst, base: ROOT, label: dst })));
+    return rows.map(({ src, dst, base, label }) => {
         const a = fs.readFileSync(path.join(ROOT, src));
-        const dstPath = path.join(ASSETS, dst);
+        const dstPath = path.join(base, dst);
         const b = fs.existsSync(dstPath) ? fs.readFileSync(dstPath) : null;
-        return { src, dst, same: !!b && a.equals(b) };
+        return { src, dst, dstPath, label, same: !!b && a.equals(b) };
     });
 }
 
@@ -36,20 +46,19 @@ function main(argv) {
     const rows = compare();
     if (check) {
         const bad = rows.filter((r) => !r.same);
-        for (const r of bad) console.error("out of sync: " + r.src + " -> android/app/src/main/assets/" + r.dst);
+        for (const r of bad) console.error("out of sync: " + r.src + " -> " + r.label);
         if (bad.length) { console.error("Run: node scripts/sync-android.js"); return 1; }
-        console.log("android/ is in sync (" + rows.length + " files)");
+        console.log("copies are in sync (" + rows.length + " files)");
         return 0;
     }
     for (const r of rows) {
         if (r.same) continue;
-        const dstPath = path.join(ASSETS, r.dst);
-        fs.mkdirSync(path.dirname(dstPath), { recursive: true });
-        fs.copyFileSync(path.join(ROOT, r.src), dstPath);
-        console.log("copied " + r.src + " -> " + r.dst);
+        fs.mkdirSync(path.dirname(r.dstPath), { recursive: true });
+        fs.copyFileSync(path.join(ROOT, r.src), r.dstPath);
+        console.log("copied " + r.src + " -> " + r.label);
     }
     return 0;
 }
 
 if (require.main === module) process.exit(main(process.argv.slice(2)));
-module.exports = { FILES, compare };
+module.exports = { FILES, ROOT_COPIES, compare };

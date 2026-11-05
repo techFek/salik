@@ -31,7 +31,10 @@ test("0: root keeps the newer extension changes", () => {
 
 test("0: shared core is loaded before the scripts that use it", () => {
     const m = JSON.parse(fs.readFileSync(path.join(H.ROOT, "manifest.json"), "utf8"));
-    for (const cs of m.content_scripts) assert.equal(cs.js[0], "shared/filter-core.js");
+    const [iso, main] = m.content_scripts;
+    assert.equal(iso.js[0], "shared/filter-core.js");
+    assert.equal(main.world, "MAIN");
+    assert.equal(main.js[0], "shared/filter-core.main.js", "Chrome injects a file once per page: MAIN world needs its own copy");
     assert.match(fs.readFileSync(path.join(H.ROOT, "popup.html"), "utf8"), /shared\/filter-core\.js[\s\S]*popup-app\.js/);
     assert.match(fs.readFileSync(path.join(H.ANDROID_ASSETS, "ui/index.html"), "utf8"), /\.\.\/shared\/filter-core\.js[\s\S]*app\.js/);
 });
