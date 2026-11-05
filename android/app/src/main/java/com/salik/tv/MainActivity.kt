@@ -195,6 +195,10 @@ class MainActivity : Activity() {
                     SalikLog.d(TAG, "Blocked non-web redirect: ${request.url}")
                     return true
                 }
+                if (!SalikConfig.cleartextAllowed(this@MainActivity, request.url)) {
+                    SalikLog.w(TAG, "Blocked plain-http page: ${request.url.host}")
+                    return true
+                }
                 if (request.isForMainFrame) {
                     if (isYouTubeGoogleSignIn(request.url)) { switchToYouTubeTv(request.url); return true }
                     val url = request.url.toString()
@@ -203,6 +207,12 @@ class MainActivity : Activity() {
                     if (tvMode && !isYouTube(request.url) && request.url.host != "accounts.google.com") setTvMode(false)
                 }
                 return false
+            }
+
+            override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): android.webkit.WebResourceResponse? {
+                if (SalikConfig.cleartextAllowed(this@MainActivity, request.url)) return null
+                SalikLog.w(TAG, "Blocked plain-http request: ${request.url.host}")
+                return android.webkit.WebResourceResponse("text/plain", "utf-8", 403, "Forbidden", emptyMap(), java.io.ByteArrayInputStream(ByteArray(0)))
             }
 
             override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
@@ -320,7 +330,7 @@ class MainActivity : Activity() {
         genderDetector = GenderDetector(this, root).also { b.genderDetector = it }
         val cfg = org.json.JSONObject().put("female", female).put("male", male).put("ar", !Lang.isEnglish(this))
         val js = "window.__SALIK_GENDER=$cfg;\n" + assets.open("salik/genderblur.js").bufferedReader().use { it.readText() }
-        WebViewCompat.addDocumentStartJavaScript(webView, js, SalikConfig.GENDER_BLUR_ORIGINS + listOfNotNull(SalikConfig.stremioServerOrigin(this)))
+        WebViewCompat.addDocumentStartJavaScript(webView, js, SalikConfig.GENDER_BLUR_ORIGINS + listOfNotNull(SalikConfig.stremioServerOrigin(this)?.takeIf { it.startsWith("https://") }))
         SalikLog.d(TAG, "Experimental gender blur on: female=$female male=$male")
     }
 

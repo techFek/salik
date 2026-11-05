@@ -62,9 +62,11 @@ object SalikConfig {
      * "192.168.1.10:8080". Returns its origin ("http://192.168.1.10:8080") or null. Stremio's web player
      * needs a streaming server running all the time; Android freezes the Stremio app in the background.
      */
-    private fun stremioServerUri(context: android.content.Context): java.net.URI? {
-        val raw = context.getSharedPreferences("salik_settings", android.content.Context.MODE_PRIVATE)
-            .getString("stremioServer", null)?.trim().orEmpty()
+    private fun stremioServerUri(context: android.content.Context): java.net.URI? =
+        parseServer(context.getSharedPreferences("salik_settings", android.content.Context.MODE_PRIVATE).getString("stremioServer", null))
+
+    fun parseServer(setting: String?): java.net.URI? {
+        val raw = setting?.trim().orEmpty()
         if (raw.isEmpty()) return null
         val withScheme = if (raw.startsWith("http://") || raw.startsWith("https://")) raw else "http://$raw"
         val u = runCatching { java.net.URI(withScheme) }.getOrNull() ?: return null
@@ -111,13 +113,28 @@ object SalikConfig {
         "https://*.stremio.com", "https://stremio.com"
     )
 
-    /** Origins that get the engine: the platforms + the user's Stremio server, if any. */
+    /** Origins that get the engine (+ SalikNative bridge): https only. */
     fun engineOrigins(context: android.content.Context): Set<String> =
         (PLATFORM_ORIGINS + listOfNotNull(stremioServerOrigin(context)))
-            .filter { it.startsWith("https://") || isAllowedHttpOrigin(context, it) }.toSet()
+            .filter { it.startsWith("https://") }.toSet()
 
-    private fun isAllowedHttpOrigin(context: android.content.Context, origin: String): Boolean =
-        origin.startsWith("http://") && origin == stremioServerOrigin(context)
+    /**
+     * Plain http is refused by default. The only host it may reach is the address the user typed for
+     * their Stremio server, and only when it is on the home network (10.x, 172.16-31.x, 192.168.x).
+     * (network_security_config cannot take an address chosen at run time, so this is checked in the
+     * WebView client: see MainActivity.)
+     */
+    fun cleartextAllowed(context: android.content.Context, uri: android.net.Uri?): Boolean =
+        uri == null || cleartextAllowed(context.getSharedPreferences("salik_settings", android.content.Context.MODE_PRIVATE)
+            .getString("stremioServer", null), uri.scheme, uri.host)
+
+    /** Pure form of [cleartextAllowed] (testable on the JVM). */
+    fun cleartextAllowed(serverSetting: String?, scheme: String?, host: String?): Boolean {
+        if (scheme != "http") return true
+        val h = host ?: return false
+        val server = parseServer(serverSetting) ?: return false
+        return server.host.equals(h, ignoreCase = true) && isPrivateLanHost(h)
+    }
 
     /** Extension content scripts, in manifest order. Group 1 = ISOLATED world, group 2 = MAIN world. */
     val ISOLATED_SCRIPTS = listOf("shared/filter-core.js", "ext/isolated.script.js", "ext/subtitle-censor-core.js", "ext/subtitles.script.js")

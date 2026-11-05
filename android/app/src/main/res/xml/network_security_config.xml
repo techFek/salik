@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Plain http is allowed because the user's own Stremio server on the home network
-     (e.g. http://192.168.1.10:8080) has no certificate. All streaming platforms use https anyway. -->
+<!--
+  Plain http stays possible at the OS level only because the user's own Stremio server on the home
+  network (e.g. http://192.168.1.23:11470) has no certificate, and its address is typed in Settings,
+  so it cannot be listed here. MainActivity refuses every other http page or request
+  (SalikConfig.cleartextAllowed): http is off by default, on only for that one private address.
+-->
 <network-security-config>
     <base-config cleartextTrafficPermitted="true" />
 </network-security-config>
