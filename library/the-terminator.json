@@ -315,8 +315,8 @@
       "start": 3290.893267
     },
     {
-      "action_type": "review",
-      "category": "Language",
+      "action_type": "mute",
+      "category": "language",
       "end": 3408.24,
       "id": 40,
       "original_description": "naked",
