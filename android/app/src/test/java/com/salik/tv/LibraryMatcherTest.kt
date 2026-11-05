@@ -60,8 +60,20 @@ class LibraryMatcherTest {
 
     @Test fun stremioIdsStayStrict() {
         assertEquals("inception", key(LibraryMatcher.findItem(lib, "tt1375666", "stremio")))
-        assertEquals("inception", key(LibraryMatcher.findItem(lib, "tt1375666", "general")))
+        assertNull(LibraryMatcher.findItem(lib, "tt1375666", "general"))
+        assertNull(LibraryMatcher.findItem(lib, "tt1375666", "netflix"))
         assertNull(LibraryMatcher.findItem(lib, "tt1375666:1:2", "stremio"))
+    }
+
+    @Test fun libraryKeyIsNeverMatchedDirectly() {
+        assertNull(LibraryMatcher.findItem(lib, "movie-on-netflix", "netflix"))
+        assertNull(LibraryMatcher.findItem(lib, "81234567", null))
+    }
+
+    @Test fun watchitMovie79IsFoundOnlyOnWatchit() {
+        val real = JSONObject(File("src/main/assets/data/library.json").readText())
+        assertEquals("3asal-eswed", key(LibraryMatcher.findItem(real, "79", "watchit", null, "https://www.watchit.com/#/details/movies/79")))
+        assertNull(LibraryMatcher.findItem(real, "79", "netflix", null, "https://www.netflix.com/title/79"))
     }
 
     @Test fun validatorRejectsBrokenLibraries() {

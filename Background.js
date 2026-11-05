@@ -1,15 +1,6 @@
 // سالك - Service Worker
 // كل البيانات من GitHub (مكتبة الأعمال + حالة التحديثات)، ومفيش Firebase ولا حسابات.
-importScripts('app-config.js');
-
-function idAppearsAsWholeSegment(url, id) {
-    if (!url || !id) return false;
-    if (String(id).length < 3) return false;
-    if (!/\d/.test(String(id)) && String(id).length < 8) return false;
-    const escaped = String(id).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const re = new RegExp('(^|[^0-9A-Za-z])' + escaped + '($|[^0-9A-Za-z])');
-    return re.test(String(url));
-}
+importScripts('app-config.js', 'shared/filter-core.js');
 
 let __salikLibMem = null;
 let __salikLibInflight = null;
@@ -109,29 +100,12 @@ if (request.type === "FETCH_FILTERS_BACKGROUND") {
             }
             const library = libResult.data;
 
-            let foundItem = null;
-
-            if (library && typeof library === "object" && !library.error) {
-                if (library[movieId]) {
-                    foundItem = { ...library[movieId], _libraryKey: movieId };
-                } else {
-                    for (const key in library) {
-                        const item = library[key];
-                        if (!item || !item.platforms) continue;
-                        if (item.type === "series") continue;
-                        if (item.type === "episode" && /^tt\d+$/i.test(String(movieId))) continue;
-
-                        const matched = Object.values(item.platforms).some(p =>
-                            p && (String(p.id) === movieId || (p.url && idAppearsAsWholeSegment(p.url, movieId)))
-                        );
-
-                        if (matched) {
-                            foundItem = { ...item, _libraryKey: key };
-                            break;
-                        }
-                    }
-                }
-            }
+            const foundItem = (library && typeof library === "object" && !library.error)
+                ? SalikFilterCore.findLibraryItem(library, movieId, request.platform, {
+                    episode: request.episode != null ? request.episode : request.domEpisode,
+                    pageUrl: request.pageUrl || (sender.tab && sender.tab.url) || ""
+                })
+                : null;
 
             if (foundItem) {
                 console.log(`✅ تم العثور على المحتوى: ${foundItem.title || movieId}`);

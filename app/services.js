@@ -108,30 +108,13 @@ export async function getCurrentTabInfo() {
 }
 
 export function idAppearsAsWholeSegment(url, id) {
-    if (!url || !id) return false;
-    if (String(id).length < 3) return false;
-    const escaped = String(id).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const re = new RegExp('(^|[^0-9A-Za-z])' + escaped + '($|[^0-9A-Za-z])');
-    return re.test(String(url));
+    return globalThis.SalikFilterCore.idAppearsAsWholeSegment(url, id);
 }
 
-export function findMovieByPlatformId(library, platform, urlId) {
-    if (!library || !urlId) return null;
-    if (library[urlId]) return { key: urlId, item: library[urlId] };
-    for (let id in library) {
-        const item = library[id];
-        if (!item) continue;
-        if (String(id) === String(urlId)) return { key: id, item };
-        if (platform === "stremio" && item.type === "episode" && /^tt\d+$/i.test(String(urlId))) continue;
-        const platformEntry = item.platforms && item.platforms[platform];
-        if (platformEntry && (
-            String(platformEntry.id) === String(urlId) ||
-            (platformEntry.url && idAppearsAsWholeSegment(platformEntry.url, urlId))
-        )) {
-            return { key: id, item };
-        }
-    }
-    return null;
+/* Same rules as the engine (SalikFilterCore.findLibraryItem): only that platform's id/url. */
+export function findMovieByPlatformId(library, platform, urlId, opts) {
+    const found = globalThis.SalikFilterCore.findLibraryItem(library, urlId, platform, opts);
+    return found ? { key: found._libraryKey, item: library[found._libraryKey] } : null;
 }
 
 export async function fetchLibrary() {

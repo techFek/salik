@@ -404,6 +404,80 @@
         };
     }
 
+    /* ---------- Finding the title that is playing (same rules as LibraryMatcher.kt) ---------- */
+
+    /*
+     * The id is matched only against item.platforms[platform] of the platform that is playing: its id,
+     * or the id appearing as a whole segment of that platform's url. Never the library key, never another
+     * platform's entry. Series entries are never returned. When several items share the id (episodes),
+     * the episode number, then the page url, pick one. Stremio ids (tt…[:season:episode]) are exact.
+     */
+    const STREMIO_ID_RE = /^tt\d{7,9}(?::\d+:\d+)?$/i;
+    const STREMIO_BARE_RE = /^tt\d{7,9}$/i;
+
+    function normalizeId(raw) { return String(raw == null ? "" : raw).trim().replace(/%3A/gi, ":"); }
+
+    function platformEntry(platforms, name) {
+        if (!platforms || typeof platforms !== "object") return null;
+        if (platforms[name] && typeof platforms[name] === "object") return platforms[name];
+        const k = Object.keys(platforms).find((x) => x.toLowerCase() === name);
+        return k && platforms[k] && typeof platforms[k] === "object" ? platforms[k] : null;
+    }
+
+    function idAppearsAsWholeSegment(url, id) {
+        const s = String(id);
+        if (!url || s.length < 3) return false;
+        if (!/\d/.test(s) && s.length < 8) return false;
+        return new RegExp("(^|[^0-9A-Za-z])" + escapeRegex(s) + "($|[^0-9A-Za-z])").test(String(url));
+    }
+
+    function urlTokens(url) {
+        let u = String(url || "");
+        try { u = decodeURIComponent(u); } catch (e) {}
+        u = u.toLowerCase().replace(/^[a-z]+:\/\//, "");
+        const slash = u.indexOf("/");
+        u = slash === -1 ? "" : u.slice(slash + 1);
+        return new Set(u.split(/[\/#?&=]/).filter((t) => t.length >= 2));
+    }
+
+    function findLibraryItem(lib, movieIdRaw, platformRaw, opts) {
+        const o = opts || {};
+        const movieId = normalizeId(movieIdRaw);
+        const platform = String(platformRaw || "").trim().toLowerCase();
+        if (!lib || typeof lib !== "object" || !movieId || !platform || platform === "general" || platform === "unknown") return null;
+        const items = Object.keys(lib).map((key) => [key, lib[key]]).filter(([, it]) => it && typeof it === "object" && it.type !== "series");
+        const withKey = ([key, it]) => Object.assign({}, it, { _libraryKey: key });
+
+        if (platform === "stremio") {
+            if (!STREMIO_ID_RE.test(movieId)) return null;
+            const bare = STREMIO_BARE_RE.test(movieId);
+            const hit = items.find(([, it]) => {
+                if (bare && it.type === "episode") return false;
+                const e = platformEntry(it.platforms, "stremio");
+                return !!e && normalizeId(e.id).toLowerCase() === movieId.toLowerCase();
+            });
+            return hit ? withKey(hit) : null;
+        }
+
+        const onPlatform = items.filter(([, it]) => platformEntry(it.platforms, platform));
+        let found = onPlatform.filter(([, it]) => { const e = platformEntry(it.platforms, platform); return e.id != null && String(e.id) === movieId; });
+        if (!found.length) found = onPlatform.filter(([, it]) => { const e = platformEntry(it.platforms, platform); return !!e.url && idAppearsAsWholeSegment(e.url, movieId); });
+        if (!found.length) return null;
+        let pool = found;
+        const ep = Number(o.episode);
+        if (pool.length > 1 && ep > 0) {
+            const same = pool.filter(([, it]) => Number(it.episode) === ep);
+            if (same.length) pool = same;
+        }
+        if (pool.length > 1 && o.pageUrl) {
+            const page = urlTokens(o.pageUrl);
+            const scored = pool.map((c) => [c, Array.from(urlTokens(platformEntry(c[1].platforms, platform).url)).filter((t) => page.has(t)).length]);
+            const best = Math.max.apply(null, scored.map((x) => x[1]));
+            pool = scored.filter((x) => x[1] === best).map((x) => x[0]);
+        }
+        return withKey(pool[0]);
+    }
+
     /* ---------- Library validation (same rules as SalikBackend.validateLibrary) ---------- */
 
     function validateLibrary(lib) {
@@ -440,7 +514,8 @@
         shouldFilter, buildDefaultSettings, categorizeFiltersDetailed, categorizeFilters,
         titleGroupStates, toggleTitleGroupStore, subtitleCategoryEnabled,
         timing, actionOf, resolveActiveFilters, createMuteArbiter, validateLibrary,
-        isAdOrPreviewVideo, titleVideoCandidates
+        isAdOrPreviewVideo, titleVideoCandidates,
+        normalizeId, findLibraryItem, idAppearsAsWholeSegment
     };
     if (root) root.SalikFilterCore = api;
     if (typeof module === "object" && module && module.exports) module.exports = api;

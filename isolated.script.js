@@ -309,6 +309,8 @@ function getMovieId() {
         if (stremioId) return stremioId;
 
 
+        if (detectPlatform() === "general") return detectedId;
+
         const trailingIdMatch = pathname.match(/\/(\d+)\/?$/);
         if (trailingIdMatch && trailingIdMatch[1]) return trailingIdMatch[1];
         const genericNumericSegmentMatch = pathname.match(/\/(\d{6,})(?:\/|$)/);

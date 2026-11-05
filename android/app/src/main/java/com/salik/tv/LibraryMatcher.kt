@@ -9,7 +9,9 @@ import java.security.MessageDigest
  * Finds the library item that a playing page belongs to. Pure (org.json only) so it runs in JVM tests.
  *
  * Rules: the id is matched only against platforms[platform].id of the platform that is playing, with a
- * fallback to the id appearing as a whole segment of that same platform's url. When several items share
+ * fallback to the id appearing as a whole segment of that same platform's url. The library key is never
+ * used and no other platform's entry is looked at; without a known platform nothing is returned.
+ * Same rules as SalikFilterCore.findLibraryItem (shared/filter-core.js). When several items share
  * that id (e.g. two episodes of one show), the episode number and the page url pick the right one.
  */
 object LibraryMatcher {
@@ -23,9 +25,9 @@ object LibraryMatcher {
     fun findItem(lib: JSONObject, movieIdRaw: String?, platformRaw: String? = null, episode: Int? = null, pageUrl: String? = null): JSONObject? {
         val movieId = normalizeId(movieIdRaw)
         if (movieId.isEmpty()) return null
-        if (stremioIdRe.matches(movieId)) return findStremio(lib, movieId)
         val platform = platformRaw?.trim()?.lowercase().orEmpty()
-        if (platform in NO_PLATFORM) return findAnyPlatform(lib, movieId)
+        if (platform in NO_PLATFORM) return null
+        if (platform == "stremio") return if (stremioIdRe.matches(movieId)) findStremio(lib, movieId) else null
 
         val byId = candidates(lib, platform) { entry -> entry.opt("id")?.toString() == movieId }
         val found = byId.ifEmpty {
@@ -88,27 +90,6 @@ object LibraryMatcher {
             val st = platformEntry(item.optJSONObject("platforms") ?: continue, "stremio") ?: continue
             val sid = normalizeId(st.opt("id")?.toString())
             if (sid.equals(movieId, ignoreCase = true)) return JSONObject(item.toString()).put("_libraryKey", key)
-        }
-        return null
-    }
-
-    /** Old behaviour, only for callers that do not say which platform is playing. */
-    private fun findAnyPlatform(lib: JSONObject, movieId: String): JSONObject? {
-        lib.optJSONObject(movieId)?.let { if (it.optString("type") != "series") return JSONObject(it.toString()).put("_libraryKey", movieId) }
-        val keys = lib.keys()
-        while (keys.hasNext()) {
-            val key = keys.next()
-            val item = lib.optJSONObject(key) ?: continue
-            if (item.optString("type") == "series") continue
-            val platforms = item.optJSONObject("platforms") ?: continue
-            val pKeys = platforms.keys()
-            while (pKeys.hasNext()) {
-                val p = platforms.optJSONObject(pKeys.next()) ?: continue
-                val url = p.optString("url", "")
-                if (p.opt("id")?.toString() == movieId || (url.isNotEmpty() && idAppearsAsWholeSegment(url, movieId))) {
-                    return JSONObject(item.toString()).put("_libraryKey", key)
-                }
-            }
         }
         return null
     }

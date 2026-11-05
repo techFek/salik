@@ -123,7 +123,7 @@ class ExtensionBridge(
             "FETCH_FILTERS_BACKGROUND" -> {
                 val movieId = msg.opt("movieId")?.toString() ?: ""
                 val platform = msg.optString("platform", "").ifEmpty { null }
-                val episode = (msg.opt("domEpisode") as? Number)?.toInt()?.takeIf { it > 0 }
+                val episode = ((msg.opt("episode") as? Number) ?: (msg.opt("domEpisode") as? Number))?.toInt()?.takeIf { it > 0 }
                 val pageUrl = msg.optString("pageUrl", "").ifEmpty { null }
                 SalikLog.d(TAG, "FETCH_FILTERS_BACKGROUND platform=$platform movieId=$movieId episode=$episode")
                 backend.fetchFilters(movieId, platform, episode, pageUrl)

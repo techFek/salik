@@ -626,7 +626,7 @@ function App() {
                 setCurrentItem({ key: storageData.currentMovieId, item });
                 await loadCurrentItemFilters(storageData.currentMovieId, item);
             } else if (tabInfo.movieId && tabInfo.platform !== "unknown") {
-                const found = lib[tabInfo.movieId] ? { key: tabInfo.movieId, item: lib[tabInfo.movieId] } : S.findMovieByPlatformId(lib, tabInfo.platform, tabInfo.movieId);
+                const found = S.findMovieByPlatformId(lib, tabInfo.platform, tabInfo.movieId);
                 if (found) {
                     hasActiveItem = true;
                     setCurrentItem(found);
