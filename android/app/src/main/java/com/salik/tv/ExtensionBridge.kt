@@ -122,8 +122,11 @@ class ExtensionBridge(
             "GET_SUBSCRIPTION_STATUS" -> JSONObject().put("success", true).put("isPremium", true).put("status", "free")
             "FETCH_FILTERS_BACKGROUND" -> {
                 val movieId = msg.opt("movieId")?.toString() ?: ""
-                SalikLog.d(TAG, "FETCH_FILTERS_BACKGROUND movieId=$movieId episode=${msg.opt("episode")}")
-                backend.fetchFilters(movieId)
+                val platform = msg.optString("platform", "").ifEmpty { null }
+                val episode = (msg.opt("domEpisode") as? Number)?.toInt()?.takeIf { it > 0 }
+                val pageUrl = msg.optString("pageUrl", "").ifEmpty { null }
+                SalikLog.d(TAG, "FETCH_FILTERS_BACKGROUND platform=$platform movieId=$movieId episode=$episode")
+                backend.fetchFilters(movieId, platform, episode, pageUrl)
             }
             else -> {
                 SalikLog.d(TAG, "Unhandled runtime message: ${msg.optString("type")}")

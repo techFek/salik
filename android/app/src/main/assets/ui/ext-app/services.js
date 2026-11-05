@@ -1,4 +1,4 @@
-
+import "../../shared/filter-core.js";
 
 export const SUPPORTED_PLATFORMS = ["netflix", "amazon", "osnplus", "yango", "disney", "shahid", "appletv", "watchit", "tod", "youtube", "starzplay", "jawwy", "stctv", "dailymotion", "beinconnect", "stremio"];
 
@@ -183,180 +183,25 @@ export function getPlatformLabel(p) {
     return labels[p] || p;
 }
 
-export function categorizeFilters(filters) {
-    const categories = {
-        nudity: { label: "مشهد", verb: "حجب", items: [] },
-        violence: { label: "مشهد", verb: "حجب", items: [] },
-        language: { label: "ألفاظ", verb: "كتم", items: [] },
-        substance: { label: "مشهد", verb: "حجب", items: [] }
-    };
-    (filters || []).forEach((f) => {
-        if (!f) return;
-        const cat = f.category ? f.category.toLowerCase() : "";
-        if (cat.includes("nudity") || cat.includes("sex")) categories.nudity.items.push(f);
-        else if (cat.includes("violence") || cat.includes("blood")) categories.violence.items.push(f);
-        else if (cat.includes("language") || cat.includes("profanity")) categories.language.items.push(f);
-        else categories.substance.items.push(f);
-    });
-    return categories;
-}
+const Core = globalThis.SalikFilterCore;
 
-
-export const SUBCATEGORY_SCHEMA = {
-    nudity: {
-        label: "المشاهد الحساسة",
-        icon: "🔞",
-        unitLabel: "مشهد",
-        verb: "حجب",
-        noneLabel: "لا يوجد مشاهد",
-        subcategories: [
-            { key: "kissing", label: "قبلات ومشاهد رومانسية", keywords: ["يقبل", "تقبل", "تقبيل", "قبلة", "القبل", "بوس", "حضن", "تحضن", "عناق", "تعانق", "kiss"] },
-            { key: "relations", label: "علاقات جنسية وزنا", keywords: ["زنا", "يزنون", "اباحي", "اباحية", "علاقة حميمية", "حميمية", "فتاة الليل", "يتضاجعان", "affair", "intimate"] },
-            { key: "lgbtq", label: "LGBTQ", keywords: ["تشبه الرجال بالنساء", "رجل يلبس النقاب", "لبس رجل للنقاب", "رجل يلبس فستان", "متنكر كامرأة", "متنكر كمربية", "يرتدي ملابس نساء", "شاذ", "لوطي", "متحول جنسيا", "ظهور علم المثليين", "علم المثليين", "lgbtq"] },
-            { key: "exposure", label: "عري وإيحاءات جنسية", keywords: ["عري", "عاري", "عارية", "عراة", "تعري", "يخلع", "خالع", "ملط", "تغري", "يغري", "اغراء", "إغراء", "ايحاء", "إيحاء", "ايحائي", "ايحائية", "إيحائي", "إيحائية", "اشارة جنسية", "إشارة جنسية", "تعليق جنسي", "تعليق عري", "نكتة اباحية", "تحرش", "متحرش", "مغازلة", "يغازل", "رقص اغرائي", "الراقصة", "وضع مخل", "ديسكو", "نساء يرقصن", "sexy", "naked", "nudity", "boobs"] },
-            { key: "attire", label: "ملابس كاشفة وتلميحات", keywords: ["مكشوف", "مكشوفة", "تكشف", "ظاهرة", "ظاهر", "بارزة", "بارز", "بكيني", "ملابس", "مؤخرة", "مؤخرته", "مؤخرتها", "مؤخرتهم", "مؤخرات", "مؤخراتهم", "عورة", "عورته", "عورتها", "عورات", "مفاتن", "لبس مثير", "لبس كاشف", "يبرز", "فستان كاشف", "دمية تلبس حمالة صدر", "ظهور اسفل ظهر", "revealing", "panties"] }
-        ]
-    },
-    violence: {
-        label: "لقطات عنيفة أو مقززة",
-        icon: "🩸",
-        unitLabel: "مشهد",
-        verb: "حجب",
-        noneLabel: "لا يوجد مشاهد",
-        subcategories: [
-            { key: "weapons", label: "أسلحة وقتل", keywords: ["سلاح", "سيف", "سكين", "خنجر", "قتل", "مقتول", "مقتولة", "طلقة", "رصاصة", "قطع رأس", "شنق", "مشنوق", "مشنوقة", "ميت", "حرق", "حترق", "احتراق", "انفجار", "غرق", "جثة", "حرب عنيفة", "رقاب اشخاص", "gun", "weapon", "kill", "murder", "uzi"] },
-            { key: "abuse", label: "إيذاء جسدي", keywords: ["ضرب", "صفع", "طعن", "تعذيب", "خنق", "ذبح", "جلد", "سحل", "إخصاء", "اجهاض", "كسر ذراع", "دهس", "مضاربة", "abuse", "torture", "beating"] },
-            { key: "disturbing", label: "مشاهد مقززة", keywords: ["قيء", "تقيأ", "تكرع", "بصق", "تجشأ", "تغوط", "ضرطة", "ضراط", "يضرط", "غازات", "مقزز", "مقرف", "مقرفة", "فضلات", "مشوه", "مشوهة", "مفقوعة", "تبول", "يخرج من بطن", "نصف بشري", "disturbing", "vomit", "gross", "poop", "pee"] },
-            { key: "gore", label: "عنف مفرط ودماء", keywords: ["دماء", "دم يخرج", "الدم", "دامي", "مضرج", "جرح", "أشلاء", "نزيف", "ينزف", "gore", "blood"] }
-        ]
-    },
-    language: {
-        label: "الألفاظ الخارجة",
-        icon: "🤬",
-        unitLabel: "لفظ",
-        verb: "كتم",
-        noneLabel: "لا يوجد ألفاظ",
-        subcategories: [
-            { key: "blasphemy", label: "إساءة للمقدسات", keywords: ["مقدس", "الإله", "إله", "الاله", "تهكم عن الله", "تهكم عن الاله", "استهزاء بالدين", "سخرية من الدين", "تلبس النقاب وتسرق", "hell", "goddamn", "jesus", "christ", "lord"] },
-            { key: "impiety", label: "سوء أدب مع الله", keywords: ["والنبي", "وحياة", "وحيات", "وحياه", "والنعمة", "وشرف", "ورحمة", "بالذمة", "بذمتك", "بزمتك", "وديني", "روح امك", "نهار اسود", "الحلف بغير الله", "دعاء لغير الله", "بشرفي", "وشرفي", "ليه يارب مخلقتنيش ولد", "البقية في حياتك", "يا لهوي", "احيه", "شيء الله لا يستطيع فعله"] },
-            { key: "curses", label: "شتائم", keywords: ["بن الجزمة", "ابن الحرام", "كلب", "كلاب", "بقف", "نطع", "يا نهار اسود", "يانهار اسود", "نهارك اسود", "يا نهار ابوك اسود", "يا نهار ازرق", "يا نهار اسود ومنيل", "يا نهارك اسود ومنيل", "الزفت", "زفت", "يخرب بيتك", "يخربيت امك", "يا روح امك", "يلعن", "شتائم", "screw", "screwing", "screwed", "bastard", "motherfucker", "motherfucher", "bitch", "fu*kinm"] },
-            { key: "profanity", label: "ألفاظ بذيئة", keywords: ["بذيء", "fuck", "fucking", "fuckin", "shit", "bullshit", "ass", "asshole", "dick", "prick", "crap", "damn", "bloody", "pissed", "piss", "butt", "bollocks", "arse", "كلمة قبيحة", "نكتة قبيحة", "أفعال قبيحة"] },
-            { key: "insults", label: "إهانات بسيطة", keywords: ["غبي", "جزمة", "عبيط", "زبالة", "متخلف", "حيوان", "واطي", "واطية", "العويل", "عويل", "حمار", "الحمير", "وسخ", "الوسخة", "وساخة", "حقير", "قذر", "قذرة", "هبل", "اهبل", "نجس", "جاموسة", "ابن المجنونة", "ابن الصرمة", "ابن الشمامة", "معفن", "معفنة", "المعفن", "يا سافلة", "احمق", "لطخ", "creep", "stupid", "idiot", "idiots", "dumb", "dope", "fool", "fools", "moron", "loser", "jerk", "pathetic", "freak", "lame", "bugger", "dummy", "ugly", "scum", "scumbag", "lowlife", "nitwit", "dummies", "douche", "douchebag", "imbecile"] },
-            { key: "sexual", label: "ألفاظ جنسية", keywords: ["hot", "sex", "sexy", "naked", "horny", "pedo", "penis", "pussy", "cock", "cocksucker", "scrotum", "suck", "sucked", "sucking", "hump", "shag", "whore", "slut", "playboy", "porn", "nude", "hook up", "sleeping with", "sleep with", "prostitution", "المزة", "مزة", "مزز", "فاجرة", "الفاجرة", "فاجره", "الفاجره"] },
-            { key: "substanceTalk", label: "ألفاظ تعاطي", keywords: ["beer", "wine"] }
-        ]
-    },
-    substance: {
-        label: "لقطات تعاطي ومسكرات",
-        icon: "🚬",
-        unitLabel: "مشهد",
-        verb: "حجب",
-        noneLabel: "لا يوجد مشاهد",
-        subcategories: [
-            { key: "smoking", label: "تدخين", keywords: ["سيجارة", "سجائر", "سجارة", "سيجار", "سيغار", "تدخين", "دخن", "شيشة", "أرجيلة", "الأرجيلة", "الغليون", "cigarette", "smoking", "cigarates"] },
-            { key: "alcohol", label: "كحول وخمور", keywords: ["خمر", "خمور", "كحول", "بيرة", "بيره", "جعة", "سكران", "مخمور", "يترنح", "شامبانيا", "غيبسون", "مارغاريت", "مارجاريت", "تكيلا", "wine", "beer", "alcohol", "drunk", "rum", "whiskey", "vodka", "gin", "tequila"] },
-            { key: "drugs", label: "مخدرات", keywords: ["مخدرات", "مخدر", "حشيش", "ترامادول", "كوكايين", "هروين", "استروكس", "بانجو", "بودرة", "حبوب", "حبة", "جوينت", "بودرجي", "drugs", "narcotic", "pcp", "weed", "joint", "cocaine", "pot", "crack"] },
-            { key: "gambling", label: "قمار ومراهنات", keywords: ["قمار", "مقامرة", "يراهن", "مراهنة", "gambling"] }
-        ]
-    }
-};
-
-export const OTHER_SUBKEY = "other";
-
-export function normalizeToGroupKey(rawCategory) {
-    const cat = (rawCategory || "").toLowerCase();
-    if (cat.includes("nudity") || cat.includes("sex")) return "nudity";
-    if (cat.includes("violence") || cat.includes("blood")) return "violence";
-    if (cat.includes("language") || cat.includes("profanity")) return "language";
-    return "substance";
-}
-
-function normalizeArabic(str) {
-    if (!str) return "";
-    return str
-        .replace(/[ً-ٰٟ]/g, "")
-        .replace(/[إأآٱ]/g, "ا")
-        .replace(/ى/g, "ي")
-        .replace(/ـ/g, "");
-}
-
-function buildHaystack(filterItem) {
-    const raw = [filterItem.reason, filterItem.original_description]
-        .filter(Boolean).join(" ").toLowerCase();
-    return normalizeArabic(raw);
-}
-
-function keywordMatches(haystack, keywords) {
-    return keywords.some((kw) => haystack.includes(normalizeArabic(kw.toLowerCase())));
-}
-
-export function matchSubcategory(groupKey, filterItem) {
-    const group = SUBCATEGORY_SCHEMA[groupKey];
-    if (!group || !filterItem) return OTHER_SUBKEY;
-    const haystack = buildHaystack(filterItem);
-    for (const sub of group.subcategories) {
-        if (keywordMatches(haystack, sub.keywords)) return sub.key;
-    }
-    return OTHER_SUBKEY;
-}
-
-export function matchAllSubcategories(filterItem) {
-    if (!filterItem) return [];
-    const matches = [];
-    const haystack = buildHaystack(filterItem);
-    for (const groupKey of Object.keys(SUBCATEGORY_SCHEMA)) {
-        const group = SUBCATEGORY_SCHEMA[groupKey];
-        for (const sub of group.subcategories) {
-            if (keywordMatches(haystack, sub.keywords)) {
-                matches.push({ groupKey, subKey: sub.key });
-            }
-        }
-    }
-    if (matches.length) return matches;
-    return [{ groupKey: normalizeToGroupKey(filterItem.category), subKey: OTHER_SUBKEY }];
-}
-
-export function categorizeFiltersDetailed(filters) {
-    const result = {};
-    for (const groupKey of Object.keys(SUBCATEGORY_SCHEMA)) {
-        const group = SUBCATEGORY_SCHEMA[groupKey];
-        const bySub = {};
-        group.subcategories.forEach((s) => { bySub[s.key] = []; });
-        result[groupKey] = {
-            ...group,
-            items: [],
-            bySub,
-            otherItems: []
-        };
-    }
-    (filters || []).forEach((f) => {
-        if (!f) return;
-        const matches = matchAllSubcategories(f);
-        const touchedGroups = new Set();
-        matches.forEach(({ groupKey, subKey }) => {
-            const bucket = result[groupKey];
-            if (!touchedGroups.has(groupKey)) {
-                bucket.items.push(f);
-                touchedGroups.add(groupKey);
-            }
-            if (subKey === OTHER_SUBKEY) bucket.otherItems.push(f);
-            else bucket.bySub[subKey].push(f);
-        });
-    });
-    return result;
-}
+export const SUBCATEGORY_SCHEMA = Core.SUBCATEGORY_SCHEMA;
+export const OTHER_SUBKEY = Core.OTHER_SUBKEY;
+export const categorizeFilters = Core.categorizeFilters;
+export const normalizeToGroupKey = Core.normalizeToGroupKey;
+export const matchSubcategory = Core.matchSubcategory;
+export const matchAllSubcategories = Core.matchAllSubcategories;
+export const classifyFilter = Core.classify;
+export const shouldFilter = Core.shouldFilter;
+export const categorizeFiltersDetailed = Core.categorizeFiltersDetailed;
+export const titleGroupStates = Core.titleGroupStates;
+export const toggleTitleGroupStore = Core.toggleTitleGroupStore;
 
 const LEGACY_FLAT_KEYS = { nudity: "filter_nudity", violence: "filter_violence", language: "filter_language", substance: "filter_substance" };
 const SETTINGS_STORAGE_KEY = "nazafaFilterSettings";
 
 function buildDefaultSettings() {
-    const defaults = {};
-    for (const groupKey of Object.keys(SUBCATEGORY_SCHEMA)) {
-        const subs = {};
-        SUBCATEGORY_SCHEMA[groupKey].subcategories.forEach((s) => { subs[s.key] = true; });
-        defaults[groupKey] = { enabled: true, subs };
-    }
-    return defaults;
+    return Core.buildDefaultSettings();
 }
 
 export async function getFilterSettings() {

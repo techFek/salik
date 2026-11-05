@@ -9,12 +9,13 @@ object SalikConfig {
     /** Public library (titles + filter timings). Needs ".read": true on /library in database.rules.json. */
     const val LIBRARY_URL = "https://raw.githubusercontent.com/techFek/salik/main/library.json"
 
+    /** Optional SHA-256 of library.json ("<hex>  library.json"); when present the download must match it. */
+    const val LIBRARY_SHA256_URL = "$LIBRARY_URL.sha256"
+
     const val START_URL = "https://shahid.mbc.net"
 
     /** Same hosts as content_scripts.matches in the extension manifest (origin level). */
     val PLATFORM_ORIGINS = setOf(
-        "http://*.shahid.mbc.net",
-        "http://shahid.mbc.net",
         "https://*.amazon.com",
         "https://*.amazon.eg",
         "https://*.bein.com",
@@ -88,7 +89,19 @@ object SalikConfig {
     fun stremioServerOrigin(context: android.content.Context): String? {
         val u = stremioServerUri(context) ?: return null
         if (u.port == -1 || u.port == 11470 || u.port == 12470) return null
+        if (u.scheme == "http" && !isPrivateLanHost(u.host)) return null
         return "${u.scheme}://${u.host}:${u.port}"
+    }
+
+    /**
+     * The only plain-http origin that may get the engine + SalikNative bridge is the user's own Stremio
+     * server on the home network (10.x, 172.16-31.x, 192.168.x). Public http hosts are refused.
+     */
+    fun isPrivateLanHost(host: String?): Boolean {
+        val h = host?.trim()?.lowercase() ?: return false
+        val p = h.split(".").map { it.toIntOrNull() ?: return false }
+        if (p.size != 4 || p.any { it !in 0..255 }) return false
+        return p[0] == 10 || (p[0] == 172 && p[1] in 16..31) || (p[0] == 192 && p[1] == 168)
     }
 
     /** Experimental gender blur: only where the video is not DRM-protected (+ the user's Stremio server). */
@@ -100,9 +113,13 @@ object SalikConfig {
 
     /** Origins that get the engine: the platforms + the user's Stremio server, if any. */
     fun engineOrigins(context: android.content.Context): Set<String> =
-        PLATFORM_ORIGINS + listOfNotNull(stremioServerOrigin(context))
+        (PLATFORM_ORIGINS + listOfNotNull(stremioServerOrigin(context)))
+            .filter { it.startsWith("https://") || isAllowedHttpOrigin(context, it) }.toSet()
+
+    private fun isAllowedHttpOrigin(context: android.content.Context, origin: String): Boolean =
+        origin.startsWith("http://") && origin == stremioServerOrigin(context)
 
     /** Extension content scripts, in manifest order. Group 1 = ISOLATED world, group 2 = MAIN world. */
-    val ISOLATED_SCRIPTS = listOf("ext/isolated.script.js", "ext/subtitle-censor-core.js", "ext/subtitles.script.js")
-    val MAIN_SCRIPTS = listOf("ext/main.script.js")
+    val ISOLATED_SCRIPTS = listOf("shared/filter-core.js", "ext/isolated.script.js", "ext/subtitle-censor-core.js", "ext/subtitles.script.js")
+    val MAIN_SCRIPTS = listOf("shared/filter-core.js", "ext/main.script.js")
 }

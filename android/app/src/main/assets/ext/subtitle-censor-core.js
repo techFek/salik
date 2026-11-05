@@ -232,12 +232,9 @@
 
     function isCategoryEnabled(category) {
         try {
-            if (typeof userSettings === "undefined") return category === "youtubeExtra" ? /(^|\.)youtube\.com$/i.test(location.hostname) : true;
-            if (category === "explicit") return userSettings.nudity !== false;
-            if (category === "profanity") return userSettings.language !== false;
-            if (category === "substance") return userSettings.substance !== false;
-            if (category === "insults") return userSettings.language !== false && userSettings.insults !== false;
-            if (category === "youtubeExtra") return /(^|\.)youtube\.com$/i.test(location.hostname) && userSettings.language !== false;
+            if (category === "youtubeExtra" && !/(^|\.)youtube\.com$/i.test(location.hostname)) return false;
+            if (typeof filterSettings === "undefined" || !globalThis.SalikFilterCore) return true;
+            return globalThis.SalikFilterCore.subtitleCategoryEnabled(category, filterSettings);
         } catch (e) { /* تجاهل */ }
         if (category === "youtubeExtra") return /(^|\.)youtube\.com$/i.test(location.hostname);
         return true;

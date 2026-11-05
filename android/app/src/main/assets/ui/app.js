@@ -1,5 +1,5 @@
 import {
-  SUBCATEGORY_SCHEMA, categorizeFiltersDetailed, matchAllSubcategories, OTHER_SUBKEY,
+  SUBCATEGORY_SCHEMA, shouldFilter, titleGroupStates, toggleTitleGroupStore,
   getFilterSettings, setGroupEnabled, setSubcategoryEnabled,
   getSubtitleCensorEnabled, setSubtitleCensorEnabled, getYtAutoMuteEnabled, setYtAutoMuteEnabled,
   getDisabledFiltersStore, getUrlForPlatform,
@@ -244,12 +244,7 @@ function genresOf(item) {
 
 function allowedBySettings(f) {
   const st = S.settings;
-  if (!st) return true;
-  return matchAllSubcategories(f).some(({ groupKey, subKey }) => {
-    const g = st[groupKey];
-    if (!g || g.enabled === false) return false;
-    return subKey === OTHER_SUBKEY || g.subs[subKey] !== false;
-  });
+  return shouldFilter(f, st || null);
 }
 
 function actionKind(f) {
@@ -402,15 +397,11 @@ function renderBrowse() {
 async function perTitleState(item) {
   const disabled = await getDisabledFiltersStore();
   const all = filterTargets(item).flatMap((t) => (t.filters || []).map((f) => ({ ...f, __key: t.key })));
-  const detailed = categorizeFiltersDetailed(all);
   const maxEnd = Math.max(0, ...all.map((f) => Number(f.end ?? f.end_time) || 0));
   const minutes = item.type === "series" ? null : maxEnd / 60;
-  const groups = Object.keys(SUBCATEGORY_SCHEMA).map((g) => {
-    const items = detailed[g].items;
-    const offCount = items.filter((f) => (disabled[f.__key] || {})[f.id]).length;
-    return { g, items, on: items.length > 0 && offCount < items.length, globalOn: S.settings[g].enabled !== false, sev: getSeverityLevel(items.length, minutes) };
-  });
-  return { groups, disabled, total: all.length };
+  const groups = titleGroupStates(all, disabled, S.settings)
+    .map((x) => ({ ...x, sev: getSeverityLevel(x.items.length, minutes) }));
+  return { groups, disabled, total: all.length, all };
 }
 
 async function renderDetails(key) {
@@ -768,15 +759,10 @@ document.addEventListener("click", async (e) => {
 
 async function toggleTitleGroup(key, g) {
   const item = S.byKey[key];
-  const { groups } = await perTitleState(item);
+  const { groups, disabled, all } = await perTitleState(item);
   const grp = groups.find((x) => x.g === g);
   const enable = !grp.on;
-  const store = await getDisabledFiltersStore();
-  for (const f of grp.items) {
-    const m = store[f.__key] || (store[f.__key] = {});
-    if (enable) delete m[f.id]; else m[f.id] = true;
-    if (!Object.keys(m).length) delete store[f.__key];
-  }
+  const store = toggleTitleGroupStore(all, disabled, g, enable);
   await chrome.storage.local.set({ disabledFilters: store });
   toast(T(enable ? "titleGroupOn" : "titleGroupOff", { g: gName(g), t: item.title }));
 }
