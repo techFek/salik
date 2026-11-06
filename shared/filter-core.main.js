@@ -6,7 +6,10 @@
  */
 (function (root) {
     "use strict";
-    if (root && root.SalikFilterCore) return;
+    if (root && root.SalikFilterCore) {
+        if (typeof module === "object" && module && module.exports) module.exports = root.SalikFilterCore;
+        return;
+    }
 
     const SCHEMA = {
         nudity: {

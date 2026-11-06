@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>سالك لـ Stremio</title>
+<style>
+  :root { --bg: #0f1115; --card: #181b22; --text: #e8e9ec; --muted: #9aa0ab; --line: #2a2f39; --accent: #10b981; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.6 system-ui, "Segoe UI", Tahoma, sans-serif; }
+  main { max-width: 640px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 24px; margin: 0 0 4px; }
+  p.lead { color: var(--muted); margin: 0 0 20px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+  label { display: block; font-weight: 600; margin-bottom: 6px; }
+  .hint { color: var(--muted); font-size: 14px; margin-top: 6px; }
+  input[type=url], select { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: #11141a; color: var(--text); font-size: 15px; direction: ltr; }
+  .groups label { display: flex; gap: 10px; align-items: center; font-weight: 400; margin: 8px 0; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  a.btn, button { display: inline-block; padding: 12px 18px; border-radius: 10px; border: 0; background: var(--accent); color: #04130d; font-weight: 700; text-decoration: none; cursor: pointer; font-size: 15px; }
+  button.secondary { background: #2a2f39; color: var(--text); }
+  code { display: block; direction: ltr; text-align: left; background: #11141a; border: 1px solid var(--line); border-radius: 8px; padding: 10px; word-break: break-all; font-size: 13px; margin: 10px 0; }
+  .warn { color: #fbbf24; font-size: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>🛡️ سالك لـ Stremio</h1>
+  <p class="lead">يشغّل الأعمال اللي في مكتبة سالك بعد الفلترة على أي جهاز عليه Stremio، ومنها تلفزيونات سامسونج.</p>
+
+  <div class="card">
+    <label for="src">رابط الـ addon المصدر (manifest.json)</label>
+    <input id="src" type="url" placeholder="https://.../manifest.json">
+    <div class="hint">الـ addon اللي بتتفرج منه عادة. لازم يدّي روابط مباشرة (http)، روابط التورنت مش مدعومة.</div>
+  </div>
+
+  <div class="card">
+    <label for="subs">رابط addon الترجمة (اختياري)</label>
+    <input id="subs" type="url" placeholder="https://.../manifest.json">
+    <div class="hint">سالك هيظبط توقيت الترجمة بعد المشاهد اللي اتشالت، وينضّف الألفاظ.</div>
+  </div>
+
+  <div class="card groups">
+    <label>اللي يتفلتر</label>
+    <div id="groups"></div>
+  </div>
+
+  <div class="card">
+    <label for="maxh">أقصى جودة</label>
+    <select id="maxh"><option value="1080">1080p</option><option value="720">720p (أخف على الجهاز)</option><option value="480">480p</option></select>
+    <div class="hint">الفلترة بتعيد ترميز الفيديو على جهازك، فالجودة الأقل بتشتغل أسرع.</div>
+  </div>
+
+  <div class="card">
+    <div class="row">
+      <a class="btn" id="install" href="#">تثبيت في Stremio</a>
+      <button class="secondary" id="copy" type="button">نسخ الرابط</button>
+    </div>
+    <code id="link"></code>
+    <div class="warn" id="warn"></div>
+  </div>
+</main>
+<script>
+  const BASE = __BASE__;
+  const CONFIG = __CONFIG__;
+  const GROUPS = __GROUPS__;
+  const $ = (id) => document.getElementById(id);
+  $("src").value = CONFIG.src ? CONFIG.src + "/manifest.json" : "";
+  $("subs").value = CONFIG.subs ? CONFIG.subs + "/manifest.json" : "";
+  $("maxh").value = String(CONFIG.maxh || 1080);
+  for (const [k, name] of Object.entries(GROUPS)) {
+    const l = document.createElement("label");
+    l.innerHTML = '<input type="checkbox"> <span></span>';
+    l.querySelector("input").checked = CONFIG.groups[k] !== false;
+    l.querySelector("input").dataset.k = k;
+    l.querySelector("span").textContent = name;
+    $("groups").appendChild(l);
+  }
+  function b64url(s) { return btoa(unescape(encodeURIComponent(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
+  function update() {
+    const groups = {};
+    document.querySelectorAll("#groups input").forEach((i) => { groups[i.dataset.k] = i.checked; });
+    const cfg = { src: $("src").value.trim(), subs: $("subs").value.trim(), groups, maxh: Number($("maxh").value) };
+    const link = BASE + "/" + b64url(JSON.stringify(cfg)) + "/manifest.json";
+    $("link").textContent = link;
+    $("install").href = link.replace(/^https?:\/\//, "stremio://");
+    $("warn").textContent = !/^https:\/\//.test(BASE) ? "افتح الصفحة دي من رابط https (الـ tunnel)، عشان Stremio على التلفزيون يقدر يوصل للـ addon." : (!cfg.src ? "اكتب رابط الـ addon المصدر الأول." : "");
+  }
+  document.querySelectorAll("input,select").forEach((e) => e.addEventListener("input", update));
+  $("copy").addEventListener("click", () => { navigator.clipboard && navigator.clipboard.writeText($("link").textContent); $("copy").textContent = "اتنسخ ✓"; });
+  update();
+</script>
+</body>
+</html>
