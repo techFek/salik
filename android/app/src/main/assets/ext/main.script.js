@@ -1,5 +1,5 @@
 (function () {
-const NAZAFA_MAIN_VER = "1.0.24";
+const NAZAFA_MAIN_VER = "1.1.0";
 if (window.__salikMainVer === NAZAFA_MAIN_VER) return;
 window.__salikMainVer = NAZAFA_MAIN_VER;
 /* A newer copy injected after an update takes over; this one stops its timers and listeners. */
