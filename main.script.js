@@ -1282,6 +1282,15 @@ document.addEventListener('volumechange', (e) => {
         return merged;
     }
 
+    /* Subscribe / like requests in the captions -> isolated.script.js skips them (YouTube "skip" options). */
+    function postCaptionSkips(json, vid) {
+        try {
+            const segments = globalThis.SalikFilterCore.captionReminderSegments(json);
+            window.postMessage({ type: "NAZAFA_YT_CAPTION_SKIPS", videoId: vid, segments }, "*");
+            if (segments.length) console.log("⏭️ Salik YT: " + segments.length + " subscribe/like request(s) found in captions");
+        } catch (e) {}
+    }
+
     function pickTrack(tracks) {
         if (!tracks || !tracks.length) return null;
         return tracks.find((t) => t.kind === "asr") || tracks[0];
@@ -1296,6 +1305,7 @@ document.addEventListener('volumechange', (e) => {
             if (!json.events) return;
             const w = buildWindows(json);
             windows = windows.concat(w).sort((a, b) => a.s - b.s);
+            postCaptionSkips(json, vid || currentVideoId());
             post(true);
             captured = true;
             console.log(`🎬 Nazafa YT: التقطنا ترجمة المشغّل — ${windows.length} نافذة كتم`);
@@ -1355,7 +1365,9 @@ document.addEventListener('volumechange', (e) => {
                 forcePlayerFetch(player, track, vid, token);
                 return;
             }
-            windows = buildWindows(JSON.parse(body));
+            const json = JSON.parse(body);
+            windows = buildWindows(json);
+            postCaptionSkips(json, vid);
             post(true);
             console.log(`🎬 Nazafa YT: ${windows.length} نافذة كتم من ترجمة (${track.kind || "manual"}/${track.languageCode})`);
         } catch (e) {

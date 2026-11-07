@@ -332,7 +332,7 @@
             const tm = timing(f);
             if (!tm) return;
             /* SponsorBlock segments are switched on/off by their own YouTube options, not the library groups. */
-            const allowed = f.source === "sponsorblock" || shouldFilter(f, o.settings);
+            const allowed = f.source === "sponsorblock" || f.source === "youtube-captions" || shouldFilter(f, o.settings);
             if (o.nearWindow && tm.start - time > -1 && tm.start - time < o.nearWindow && allowed) result.near = true;
             if (time < tm.start - lead || time > tm.end) return;
             if (!allowed) return;
@@ -357,7 +357,8 @@
         { key: "sponsor", sb: ["sponsor"], label: "إعلان مدفوع", labelEn: "Paid sponsor" },
         { key: "interaction", sb: ["interaction"], label: "تذكير بالاشتراك والإعجاب", labelEn: "Subscribe / like reminder" },
         { key: "selfpromo", sb: ["selfpromo"], label: "ترويج ذاتي", labelEn: "Self promotion" },
-        { key: "introOutro", sb: ["intro", "outro"], label: "المقدمة والخاتمة", labelEn: "Intro and outro" }
+        { key: "introOutro", sb: ["intro", "outro"], label: "المقدمة والخاتمة", labelEn: "Intro and outro" },
+        { key: "captionReminders", sb: [], label: "طلبات الاشتراك والإعجاب في الترجمة", labelEn: "Subscribe / like requests found in captions" }
     ];
     const SPONSORBLOCK_API = "https://sponsor.ajay.app/api/skipSegments/";
 
@@ -394,6 +395,70 @@
             });
         });
         return out.sort((a, b) => a.start - b.start);
+    }
+
+    /*
+     * Subscribe / like / bell requests found in the video's own captions (YouTube json3 format), for videos
+     * SponsorBlock does not cover. Only clear requests count (e.g. "اشتركوا في القناة", "subscribe",
+     * "اعملوا لايك", "notification bell"), so a passing word like "like" is not skipped.
+     */
+    const REMINDER_PATTERNS = [
+        /\bsubscribe\b/, /\b(hit|smash|tap|press|click|leave|drop|give)( that| the| a| us a| me a)? (like|thumbs up)\b/,
+        /\blike (button|and subscribe|the video)\b/, /\b(notification|notifications) (bell|on)\b/, /\b(ring|hit|click|tap) (the|that) bell\b/,
+        /\bturn on (post )?notifications\b/,
+        /(^|\s)[وف]?(اشترك|اشتركوا|اشتركو|اشتركي)(\s+(في|فى|ب)\s*(ال)?قنا(ه|ة))?(\s|$)/, /(^|\s)[وف]?(سبسكرايب|سابسكرايب|سبسكرايبوا)(\s|$)/,
+        /(^|\s)(اعمل|اعملوا|اعملو|اعملي|دوس|دوسوا|دوسو|سيب|سيبوا|ادعم|ادعموا|متنساش|متنسوش|ما تنساش|ما تنسوش|لا تنس|لا تنسوا)\s+(\S+\s+){0,3}(لايك|اعجاب|الاعجاب|اشتراك|الاشتراك|الجرس|جرس|شير)(\s|$)/,
+        /(^|\s)(لايك|اعجاب)\s+(و|او)\s*(اشتراك|شير|سبسكرايب)(\s|$)/,
+        /(^|\s)[وف]?(فعل|فعلوا|فعلو|فعلي|شغل|شغلوا)\s+(زر\s+|زرار\s+)?(الجرس|جرس|الاشعارات|التنبيهات|التنبيه)(\s|$)/,
+        /(^|\s)زر\s+(الاعجاب|الاشتراك|الجرس)(\s|$)/
+    ];
+    const REMINDER_PAD_BEFORE_S = 0.3, REMINDER_PAD_AFTER_S = 0.2, REMINDER_JOIN_GAP_S = 2.5, REMINDER_MAX_S = 30;
+
+    function isReminderText(text) {
+        const t = normalizeArabic(String(text || "").toLowerCase()).replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
+        return !!t && REMINDER_PATTERNS.some((re) => re.test(t));
+    }
+
+    function captionReminderSegments(json) {
+        const lines = [];
+        ((json && json.events) || []).forEach((ev) => {
+            if (!ev || !ev.segs || !ev.segs.length) return;
+            const text = ev.segs.map((sg) => sg.utf8 || "").join("").replace(/\n/g, " ").trim();
+            if (!text) return;
+            const start = (ev.tStartMs || 0) / 1000;
+            const end = start + (ev.dDurationMs || 0) / 1000;
+            lines.push({ start, end: end > start ? end : start + 2, text });
+        });
+        lines.sort((a, b) => a.start - b.start);
+        const hits = [];
+        lines.forEach((l, i) => {
+            const prev = lines[i - 1];
+            const joined = prev && l.start - prev.end < 1 ? prev.text + " " + l.text : null;
+            if (isReminderText(l.text)) hits.push({ start: l.start, end: l.end, text: l.text });
+            else if (joined && isReminderText(joined)) hits.push({ start: prev.start, end: l.end, text: joined });
+        });
+        const merged = [];
+        hits.sort((a, b) => a.start - b.start).forEach((h) => {
+            const last = merged[merged.length - 1];
+            if (last && h.start - last.end <= REMINDER_JOIN_GAP_S && h.end - last.start <= REMINDER_MAX_S) {
+                last.end = Math.max(last.end, h.end);
+                if (last.text.indexOf(h.text) === -1) last.text += " " + h.text;
+            } else merged.push(Object.assign({}, h));
+        });
+        return merged.map((m) => ({
+            start: Math.max(0, Math.round((m.start - REMINDER_PAD_BEFORE_S) * 100) / 100),
+            end: Math.round((Math.min(m.end, m.start + REMINDER_MAX_S) + REMINDER_PAD_AFTER_S) * 100) / 100,
+            text: m.text.slice(0, 200)
+        }));
+    }
+
+    function captionReminderFilters(segments, ytSkip) {
+        const on = Object.assign(defaultYtSkip(), ytSkip || {});
+        if (on.captionReminders === false) return [];
+        return (segments || []).filter((sg) => isFinite(sg.start) && isFinite(sg.end) && sg.end > sg.start).map((sg) => ({
+            id: "cap-" + Math.round(sg.start * 10), start: sg.start, end: sg.end, action_type: "skip",
+            category: "youtube", original_description: "طلب الاشتراك أو اللايك: " + String(sg.text || "").slice(0, 80), source: "youtube-captions"
+        }));
     }
 
     /* ---------- Which <video> is the title (ads and short previews are skipped) ---------- */
@@ -567,7 +632,8 @@
         timing, actionOf, resolveActiveFilters, createMuteArbiter, validateLibrary,
         isAdOrPreviewVideo, titleVideoCandidates,
         normalizeId, findLibraryItem, idAppearsAsWholeSegment,
-        YT_SKIP_OPTIONS, defaultYtSkip, ytSkipCategories, sponsorBlockUrl, sponsorBlockToFilters
+        YT_SKIP_OPTIONS, defaultYtSkip, ytSkipCategories, sponsorBlockUrl, sponsorBlockToFilters,
+        isReminderText, captionReminderSegments, captionReminderFilters
     };
     if (root) root.SalikFilterCore = api;
     if (typeof module === "object" && module && module.exports) module.exports = api;

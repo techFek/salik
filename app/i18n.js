@@ -9,6 +9,7 @@ const DICT = {
     "مشاهد أخرى غير مصنّفة": "Other uncategorized scenes",
     "تخطي على يوتيوب": "Skip on YouTube", "إعلان مدفوع": "Paid sponsor", "تذكير بالاشتراك والإعجاب": "Subscribe / like reminder",
     "ترويج ذاتي": "Self promotion", "المقدمة والخاتمة": "Intro and outro",
+    "طلبات الاشتراك والإعجاب في الترجمة": "Subscribe / like requests found in captions",
     "الأوقات من SponsorBlock ويضيفها المستخدمون (CC BY-NC-SA 4.0)": "Times from SponsorBlock, added by users (CC BY-NC-SA 4.0)", "الكل": "All",
     "ابحث عن فيلم أو مسلسل مدعوم...": "Search a supported movie or series...",
     "الأعمال المدعومة والمفلترة هنا:": "Supported & filtered titles:",

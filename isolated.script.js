@@ -188,10 +188,22 @@ let nazafaYtSkip = NazafaCore.defaultYtSkip();
 let nazafaSbVideoId = null;
 let nazafaSbAnswer = null;
 let nazafaSbFilters = [];
+let nazafaCaptionSkips = { videoId: null, segments: [] };
 
 function nazafaRebuildSbFilters() {
-    nazafaSbFilters = nazafaSbAnswer ? NazafaCore.sponsorBlockToFilters(nazafaSbAnswer, nazafaSbVideoId, nazafaYtSkip) : [];
+    const sb = nazafaSbAnswer ? NazafaCore.sponsorBlockToFilters(nazafaSbAnswer, nazafaSbVideoId, nazafaYtSkip) : [];
+    const caps = nazafaCaptionSkips.videoId && nazafaCaptionSkips.videoId === nazafaSbVideoId
+        ? NazafaCore.captionReminderFilters(nazafaCaptionSkips.segments, nazafaYtSkip) : [];
+    nazafaSbFilters = sb.concat(caps);
 }
+
+/* Subscribe / like requests that main.script.js found in the video's captions. */
+window.addEventListener("message", (event) => {
+    const d = event.data;
+    if (event.source !== window || !d || d.type !== "NAZAFA_YT_CAPTION_SKIPS" || typeof d.videoId !== "string" || !Array.isArray(d.segments)) return;
+    nazafaCaptionSkips = { videoId: d.videoId, segments: d.segments.slice(0, 50).map((s) => ({ start: Number(s.start), end: Number(s.end), text: String(s.text || "") })) };
+    nazafaRebuildSbFilters();
+});
 
 async function nazafaSha256Prefix(text) {
     const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
@@ -202,7 +214,7 @@ function nazafaLoadSponsorBlock(videoId) {
     if (videoId === nazafaSbVideoId) return;
     nazafaSbVideoId = videoId;
     nazafaSbAnswer = null;
-    nazafaSbFilters = [];
+    nazafaRebuildSbFilters();
     if (!videoId || !/^[A-Za-z0-9_-]{11}$/.test(videoId)) return;
     nazafaSha256Prefix(videoId).then((prefix) => {
         chrome.runtime.sendMessage({ type: "FETCH_SPONSORBLOCK", prefix, categories: NazafaCore.ytSkipCategories(NazafaCore.defaultYtSkip()) }, (res) => {

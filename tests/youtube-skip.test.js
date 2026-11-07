@@ -117,3 +117,52 @@ test("yt-skip: settings UI, Background, Android bridge and attribution are wired
     const manifest = JSON.parse(fs.readFileSync(path.join(H.ROOT, "manifest.json"), "utf8"));
     assert.ok(!(manifest.host_permissions || []).some((h) => /ajay/.test(h)), "no new permission needed (CORS allowed)");
 });
+
+/* ---------- Subscribe / like requests found in the captions ---------- */
+
+test("yt-captions: clear requests are found, ordinary words are not", () => {
+    const yes = ["Don't forget to subscribe", "smash that like button", "اشتركوا في القناة", "اشترك في القناة وفعل الجرس",
+        "ما تنساش تعمل لايك للفيديو", "فعلوا زر الجرس", "سبسكرايب", "اعملوا لايك واشتراك", "turn on notifications", "hit the bell"];
+    const no = ["I like this car", "the subscription price went up", "اشتراك النادي غالي", "عجبني الفيلم",
+        "الجرس رن في المدرسة", "he subscribed to my theory", "المشتركين في المسابقة", "like I said before"];
+    for (const t of yes) assert.equal(Core.isReminderText(t), true, t);
+    for (const t of no) assert.equal(Core.isReminderText(t), false, t);
+});
+
+test("yt-captions: json3 captions -> merged, padded skip segments", () => {
+    const ev = (ms, dur, text) => ({ tStartMs: ms, dDurationMs: dur, segs: [{ utf8: text }] });
+    const json = { events: [
+        ev(1000, 2000, "welcome back everyone"),
+        ev(60000, 2000, "before we start, make sure to"),
+        ev(62000, 2000, "subscribe and hit the bell"),
+        ev(64500, 2000, "اشتركوا في القناة"),
+        ev(120000, 2000, "today we talk about cars")
+    ] };
+    const segs = Core.captionReminderSegments(json);
+    assert.equal(segs.length, 1);
+    assert.equal(segs[0].start, 61.7, "starts at the request (0.3 s early)");
+    assert.equal(segs[0].end, 66.7);
+    const f = Core.captionReminderFilters(segs, Core.defaultYtSkip());
+    assert.equal(f[0].source, "youtube-captions");
+    assert.deepEqual(Core.captionReminderFilters(segs, { captionReminders: false }), []);
+});
+
+test("yt-captions: segments from main.script.js are skipped by the engine; the option turns it off", async () => {
+    const { page, video } = youtubePage([]);
+    page.eval("brainLoop(1000)");
+    await settle();
+    page.post({ type: "NAZAFA_YT_CAPTION_SKIPS", videoId: VID, segments: [{ start: 40, end: 47.5, text: "subscribe" }] });
+    page.posted.length = 0;
+    video.currentTime = 41;
+    page.eval("isExecutingAction = false; processActiveFilters()");
+    const skip = page.posted.find((m) => m && m.action === "skip");
+    assert.ok(skip && skip.targetTime === 47.5);
+    page.post({ type: "NAZAFA_YT_CAPTION_SKIPS", videoId: "otherVideo1", segments: [{ start: 100, end: 110 }] });
+    page.runtimeListeners.forEach((fn) => fn({ type: "UPDATE_YT_SKIP_SETTING", value: { captionReminders: false } }, {}, () => {}));
+    page.posted.length = 0;
+    video.currentTime = 41;
+    page.eval("isExecutingAction = false; processActiveFilters()");
+    assert.ok(!page.posted.some((m) => m && m.action === "skip"));
+    const main = fs.readFileSync(path.join(H.ROOT, "main.script.js"), "utf8");
+    assert.equal((main.match(/^\s+postCaptionSkips\(json, vid/gm) || []).length, 2, "both caption paths report segments");
+});
