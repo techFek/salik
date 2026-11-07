@@ -268,6 +268,30 @@ export function getSeverityLevel(count, durationMinutes) {
 
 const SUBTITLE_CENSOR_STORAGE_KEY = "nazafaSubtitleCensorEnabled";
 
+const YT_SKIP_STORAGE_KEY = "nazafaYtSkip";
+export const YT_SKIP_OPTIONS = globalThis.SalikFilterCore.YT_SKIP_OPTIONS;
+
+/* YouTube skip options (SponsorBlock): { sponsor, interaction, selfpromo, introOutro } -> true/false */
+export async function getYtSkip() {
+    const res = await new Promise((resolve) => chrome.storage.sync.get([YT_SKIP_STORAGE_KEY], resolve));
+    return Object.assign(globalThis.SalikFilterCore.defaultYtSkip(), res[YT_SKIP_STORAGE_KEY] || {});
+}
+
+export async function setYtSkipOption(key, enabled) {
+    const value = Object.assign(await getYtSkip(), { [key]: !!enabled });
+    chrome.storage.sync.set({ [YT_SKIP_STORAGE_KEY]: value });
+    if (chrome.tabs && chrome.tabs.query) {
+        chrome.tabs.query({}, (tabs) => {
+            (tabs || []).forEach((tab) => {
+                if (tab.url && /youtube\.com/i.test(tab.url)) {
+                    chrome.tabs.sendMessage(tab.id, { type: "UPDATE_YT_SKIP_SETTING", value }, () => { void chrome.runtime.lastError; });
+                }
+            });
+        });
+    }
+    return value;
+}
+
 const YT_AUTOMUTE_STORAGE_KEY = "nazafaYtAutoMuteEnabled";
 
 export async function getYtAutoMuteEnabled() {

@@ -183,6 +183,48 @@ chrome.storage.sync.get(['nazafaFilterSettings', 'filter_nudity', 'filter_violen
     broadcastSubtitleCensorSetting();
 });
 
+/* ---------- YouTube: skip sponsor / subscribe reminders / intro-outro (SponsorBlock data) ---------- */
+let nazafaYtSkip = NazafaCore.defaultYtSkip();
+let nazafaSbVideoId = null;
+let nazafaSbAnswer = null;
+let nazafaSbFilters = [];
+
+function nazafaRebuildSbFilters() {
+    nazafaSbFilters = nazafaSbAnswer ? NazafaCore.sponsorBlockToFilters(nazafaSbAnswer, nazafaSbVideoId, nazafaYtSkip) : [];
+}
+
+async function nazafaSha256Prefix(text) {
+    const d = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+    return Array.from(new Uint8Array(d)).slice(0, 2).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+function nazafaLoadSponsorBlock(videoId) {
+    if (videoId === nazafaSbVideoId) return;
+    nazafaSbVideoId = videoId;
+    nazafaSbAnswer = null;
+    nazafaSbFilters = [];
+    if (!videoId || !/^[A-Za-z0-9_-]{11}$/.test(videoId)) return;
+    nazafaSha256Prefix(videoId).then((prefix) => {
+        chrome.runtime.sendMessage({ type: "FETCH_SPONSORBLOCK", prefix, categories: NazafaCore.ytSkipCategories(NazafaCore.defaultYtSkip()) }, (res) => {
+            if (chrome.runtime.lastError || !res || !res.success || nazafaSbVideoId !== videoId) return;
+            nazafaSbAnswer = res.data;
+            nazafaRebuildSbFilters();
+            if (nazafaSbFilters.length) console.log("⏭️ Salik: " + nazafaSbFilters.length + " YouTube segment(s) to skip (SponsorBlock)");
+        });
+    }).catch(() => {});
+}
+
+chrome.storage.sync.get(['nazafaYtSkip'], (res) => {
+    if (res && res.nazafaYtSkip) nazafaYtSkip = Object.assign(NazafaCore.defaultYtSkip(), res.nazafaYtSkip);
+    nazafaRebuildSbFilters();
+});
+
+chrome.runtime.onMessage.addListener((request) => {
+    if (request.type !== "UPDATE_YT_SKIP_SETTING") return;
+    nazafaYtSkip = Object.assign(NazafaCore.defaultYtSkip(), request.value || {});
+    nazafaRebuildSbFilters();
+});
+
 let lastReportedDurationMinutes = null;
 function reportVideoDurationIfChanged(video) {
     try {
@@ -432,6 +474,7 @@ function brainLoop(timestamp) {
         const detectedId = (nazafaDetectedPlatformNow === "amazon" && amazonLiveEpisodeId) ? amazonLiveEpisodeId
             : (nazafaDetectedPlatformNow === "appletv" && appleTVLiveEpisodeId) ? appleTVLiveEpisodeId
             : getMovieId();
+        if (nazafaDetectedPlatformNow === "youtube") nazafaLoadSponsorBlock(detectedId);
         const detectedEpisode = extractEpisodeNumberFromDOM();
         if (detectedId && (detectedId !== currentMovieId || detectedEpisode !== currentEpisodeNumber)) {
             currentMovieId = detectedId;
@@ -447,7 +490,8 @@ function brainLoop(timestamp) {
 
 
 function processActiveFilters() {
-    if (!window.activeFilters || window.activeFilters.length === 0) {
+    const nazafaFilters = nazafaSbFilters.length ? (window.activeFilters || []).concat(nazafaSbFilters) : window.activeFilters;
+    if (!nazafaFilters || nazafaFilters.length === 0) {
         nazafaNearFilter = false;
         nazafaReleaseEngineState();
         return;
@@ -503,7 +547,7 @@ function processActiveFilters() {
     }
 
 
-    const resolved = NazafaCore.resolveActiveFilters(window.activeFilters, time, {
+    const resolved = NazafaCore.resolveActiveFilters(nazafaFilters, time, {
         disabledIds: disabledFilterIds,
         settings: filterSettings,
         lead: NAZAFA_ACTION_LEAD_S,

@@ -2,6 +2,7 @@ import {
   SUBCATEGORY_SCHEMA, shouldFilter, titleGroupStates, toggleTitleGroupStore,
   getFilterSettings, setGroupEnabled, setSubcategoryEnabled,
   getSubtitleCensorEnabled, setSubtitleCensorEnabled, getYtAutoMuteEnabled, setYtAutoMuteEnabled,
+  getYtSkip, setYtSkipOption, YT_SKIP_OPTIONS,
   getDisabledFiltersStore, getUrlForPlatform,
   SEVERITY_META, getSeverityLevel
 } from "./ext-app/services.js";
@@ -88,6 +89,8 @@ const STR = {
   on: ["مفعّل", "On"],
   ytOnToast: ["كتم يوتيوب التلقائي: مفعّل", "YouTube auto-mute: on"],
   ytOffToast: ["كتم يوتيوب التلقائي: متوقف", "YouTube auto-mute: off"],
+  ytSkip: ["تخطي على يوتيوب", "Skip on YouTube"],
+  ytSkipHint: ["يتخطى هذه الأجزاء تلقائيًا. الأوقات من SponsorBlock (CC BY-NC-SA 4.0) ويضيفها المستخدمون، لذا قد لا تتوفر لبعض الفيديوهات", "Skips these parts automatically. Times come from SponsorBlock (CC BY-NC-SA 4.0), added by users, so some videos have none"],
   epShort: ["م{s} ح{e}", "S{s} E{e}"],
   subOffGlobally: ["التصنيف متوقف من الإعدادات العامة", "Category off in general settings"],
   filterOn: ["سيُطبَّق هذا المشهد", "This scene will be filtered"],
@@ -178,7 +181,7 @@ const gName = (g) => GROUP_NAMES[g][EN ? 1 : 0];
 const ACTION_COLORS = { mute: "var(--mute)", skip: "var(--skip)", blur: "var(--blur)" };
 
 const S = {
-  items: [], byKey: {}, titles: [], episodes: {}, settings: null, subtitleCensor: true, ytAutoMute: true,
+  items: [], byKey: {}, titles: [], episodes: {}, settings: null, subtitleCensor: true, ytAutoMute: true, ytSkip: null,
   app: null, error: null, stack: [{ name: "home" }],
   browse: { q: "", platform: "all", type: "all" }
 };
@@ -503,6 +506,10 @@ async function renderSettings() {
         <button class="group-row ${S.ytAutoMute ? "on" : ""}" data-nav data-fid="yt-mute" data-yt-mute>
           <span class="gr-main"><span class="gr-name">${T("ytMute")}</span><br><span class="gr-sub">${T("ytMuteHint")}</span></span>
           <i class="toggle ${S.ytAutoMute ? "on" : ""}"></i></button>
+        <p class="hint" style="margin-top:14px">${T("ytSkip")}: ${T("ytSkipHint")}</p>
+        ${YT_SKIP_OPTIONS.map((o) => { const on = S.ytSkip && S.ytSkip[o.key] !== false; return `<button class="group-row ${on ? "on" : ""}" data-nav data-fid="ytskip-${o.key}" data-yt-skip="${o.key}">
+          <span class="gr-main"><span class="gr-name">⏭️ ${esc(EN ? o.labelEn : o.label)}</span></span>
+          <i class="toggle ${on ? "on" : ""}"></i></button>`; }).join("")}
         ${["hideFemale", "hideMale"].map((k) => `<button class="group-row ${a[k] ? "on" : ""}" data-nav data-fid="${k}" data-gender="${k}">
           <span class="gr-main"><span class="gr-name">${T(k)} <span class="beta">${T("experimental")}</span></span><br><span class="gr-sub">${T("genderHint")}</span></span>
           <i class="toggle ${a[k] ? "on" : ""}"></i></button>`).join("")}
@@ -711,6 +718,10 @@ document.addEventListener("click", async (e) => {
     rerender(el.dataset.fid); return;
   }
   if (d.expand) { const c = current(); c.open = c.open === d.expand ? "" : d.expand; rerender(el.dataset.fid); return; }
+  if (d.ytSkip) {
+    S.ytSkip = await setYtSkipOption(d.ytSkip, !(S.ytSkip && S.ytSkip[d.ytSkip] !== false));
+    rerender(el.dataset.fid); return;
+  }
   if (d.ytMute !== undefined) {
     S.ytAutoMute = !S.ytAutoMute; setYtAutoMuteEnabled(S.ytAutoMute);
     toast(T(S.ytAutoMute ? "ytOnToast" : "ytOffToast")); rerender(el.dataset.fid); return;
@@ -926,7 +937,7 @@ $rail.addEventListener("click", (e) => { if (e.target.closest(".rail-item")) set
     b.querySelector("span:last-child").textContent = T(b.dataset.route);
     b.setAttribute("aria-label", T(b.dataset.route));
   });
-  [S.settings, S.subtitleCensor, S.ytAutoMute, S.app] = await Promise.all([getFilterSettings(), getSubtitleCensorEnabled(), getYtAutoMuteEnabled(),
+  [S.settings, S.subtitleCensor, S.ytAutoMute, S.ytSkip, S.app] = await Promise.all([getFilterSettings(), getSubtitleCensorEnabled(), getYtAutoMuteEnabled(), getYtSkip(),
     fetch("/data/app.json").then((r) => r.json()).catch(() => null)]);
   renderState(T("loading"), T("loadingHint"));
   const after = sessionStorage.getItem("salik.route");

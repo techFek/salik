@@ -162,7 +162,30 @@ function CategoryCard({ catKey, groupData, groupSettings, onToggleGroup, onToggl
     `;
 }
 
-function ControlTab({ currentItemDisplay, categorizedDetailed, filterSettings, onToggleGroup, onToggleSubcategory, itemKey, disabledMap, onToggleFilter, ratingTitle, durationMinutes, subtitleCensorEnabled, onToggleSubtitleCensor, ytAutoMuteEnabled, onToggleYtAutoMute }) {
+function YouTubeSkipCard({ ytSkip, onToggle }) {
+    const [open, setOpen] = useState(false);
+    const onCount = S.YT_SKIP_OPTIONS.filter((o) => ytSkip[o.key] !== false).length;
+    return html`
+        <div class="card">
+            <div class="card-header" onClick=${() => setOpen(!open)}>
+                <span>⏭️ ${"تخطي على يوتيوب"}</span>
+                <span style=${{ color: "#94a3b8", fontSize: "12px" }}>${onCount} / ${S.YT_SKIP_OPTIONS.length}</span>
+            </div>
+            <div class=${"dropdown-content" + (open ? " open" : "")} style=${open ? { maxHeight: "460px", overflowY: "auto" } : {}}>
+                ${S.YT_SKIP_OPTIONS.map((o) => html`
+                    <${FeatureToggleRow} key=${o.key} label=${o.label} description=""
+                        enabled=${ytSkip[o.key] !== false} onToggle=${(v) => onToggle(o.key, v)} />
+                `)}
+                <div style=${{ color: "#94a3b8", fontSize: "11px", padding: "6px 4px" }}>
+                    <span>${"الأوقات من SponsorBlock ويضيفها المستخدمون (CC BY-NC-SA 4.0)"}</span>
+                    ${" "}<a href="https://sponsor.ajay.app" target="_blank" rel="noopener" style=${{ color: "#94a3b8" }}>sponsor.ajay.app</a>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function ControlTab({ currentItemDisplay, categorizedDetailed, filterSettings, onToggleGroup, onToggleSubcategory, itemKey, disabledMap, onToggleFilter, ratingTitle, durationMinutes, subtitleCensorEnabled, onToggleSubtitleCensor, ytAutoMuteEnabled, onToggleYtAutoMute, ytSkip, onToggleYtSkip }) {
     const groupKeys = ["nudity", "violence", "language", "substance"];
     return html`
         <div id="section-control" class="tab-content active">
@@ -174,6 +197,7 @@ function ControlTab({ currentItemDisplay, categorizedDetailed, filterSettings, o
                     subtitleCensorEnabled=${subtitleCensorEnabled} onToggleSubtitleCensor=${onToggleSubtitleCensor}
                     ytAutoMuteEnabled=${ytAutoMuteEnabled} onToggleYtAutoMute=${onToggleYtAutoMute} />
             `)}
+            ${ytSkip ? html`<${YouTubeSkipCard} ytSkip=${ytSkip} onToggle=${onToggleYtSkip} />` : null}
             <div class="rating-box">
                 <strong>${ratingTitle}</strong>
             </div>
@@ -586,6 +610,7 @@ function App() {
     const [durationMinutes, setDurationMinutes] = useState(null);
     const [subtitleCensorEnabled, setSubtitleCensorEnabled] = useState(true);
     const [ytAutoMuteEnabled, setYtAutoMuteEnabledState] = useState(true);
+    const [ytSkip, setYtSkipState] = useState(null);
     const [activePlatformFilter, setActivePlatformFilter] = useState("all");
     const [searchQuery, setSearchQuery] = useState("");
     const [connectionStatus, setConnectionStatus] = useState("جاري الفحص والربط مع قاعدة البيانات...");
@@ -661,6 +686,7 @@ function App() {
         const subtitleCensor = await S.getSubtitleCensorEnabled();
         setSubtitleCensorEnabled(subtitleCensor);
         setYtAutoMuteEnabledState(await S.getYtAutoMuteEnabled());
+        setYtSkipState(await S.getYtSkip());
     }
 
     useEffect(() => {
@@ -726,6 +752,10 @@ function App() {
         }
     }
 
+    async function handleToggleYtSkip(key, enabled) {
+        setYtSkipState(await S.setYtSkipOption(key, enabled));
+    }
+
     async function handleToggleYtAutoMute(enabled) {
         setYtAutoMuteEnabledState(enabled);
         await S.setYtAutoMuteEnabled(enabled);
@@ -777,7 +807,8 @@ function App() {
                     itemKey=${currentItem ? currentItem.key : null} disabledMap=${disabledMap}
                     onToggleFilter=${handleToggleFilter} ratingTitle=${ratingTitle} durationMinutes=${durationMinutes}
                     subtitleCensorEnabled=${subtitleCensorEnabled} onToggleSubtitleCensor=${handleToggleSubtitleCensor}
-                    ytAutoMuteEnabled=${ytAutoMuteEnabled} onToggleYtAutoMute=${handleToggleYtAutoMute} />
+                    ytAutoMuteEnabled=${ytAutoMuteEnabled} onToggleYtAutoMute=${handleToggleYtAutoMute}
+                    ytSkip=${ytSkip} onToggleYtSkip=${handleToggleYtSkip} />
             ` : null}
             ${activeTab === "platforms" ? html`
                 <${PlatformsTab} library=${library} activePlatformFilter=${activePlatformFilter}

@@ -128,6 +128,7 @@ class ExtensionBridge(
                 SalikLog.d(TAG, "FETCH_FILTERS_BACKGROUND platform=$platform movieId=$movieId episode=$episode")
                 backend.fetchFilters(movieId, platform, episode, pageUrl)
             }
+            "FETCH_SPONSORBLOCK" -> backend.fetchSponsorBlock(msg.optString("prefix"), msg.optJSONArray("categories"))
             else -> {
                 SalikLog.d(TAG, "Unhandled runtime message: ${msg.optString("type")}")
                 null

@@ -331,9 +331,11 @@
             if (!f || disabled[f.id]) return;
             const tm = timing(f);
             if (!tm) return;
-            if (o.nearWindow && tm.start - time > -1 && tm.start - time < o.nearWindow && shouldFilter(f, o.settings)) result.near = true;
+            /* SponsorBlock segments are switched on/off by their own YouTube options, not the library groups. */
+            const allowed = f.source === "sponsorblock" || shouldFilter(f, o.settings);
+            if (o.nearWindow && tm.start - time > -1 && tm.start - time < o.nearWindow && allowed) result.near = true;
             if (time < tm.start - lead || time > tm.end) return;
-            if (!shouldFilter(f, o.settings)) return;
+            if (!allowed) return;
             const a = actionOf(f);
             if (a === "skip") {
                 if (tm.end > time && (!result.skip || tm.end > timing(result.skip).end)) result.skip = f;
@@ -346,6 +348,52 @@
         result.any = !!(result.skip || result.blur || result.mute);
         if (result.any) result.near = true;
         return result;
+    }
+
+    /* ---------- YouTube: SponsorBlock segments (sponsor, subscribe reminders, intro/outro…) ---------- */
+
+    /* User options -> SponsorBlock categories. Data: sponsor.ajay.app (CC BY-NC-SA 4.0). */
+    const YT_SKIP_OPTIONS = [
+        { key: "sponsor", sb: ["sponsor"], label: "إعلان مدفوع", labelEn: "Paid sponsor" },
+        { key: "interaction", sb: ["interaction"], label: "تذكير بالاشتراك والإعجاب", labelEn: "Subscribe / like reminder" },
+        { key: "selfpromo", sb: ["selfpromo"], label: "ترويج ذاتي", labelEn: "Self promotion" },
+        { key: "introOutro", sb: ["intro", "outro"], label: "المقدمة والخاتمة", labelEn: "Intro and outro" }
+    ];
+    const SPONSORBLOCK_API = "https://sponsor.ajay.app/api/skipSegments/";
+
+    function defaultYtSkip() {
+        const o = {};
+        YT_SKIP_OPTIONS.forEach((x) => { o[x.key] = true; });
+        return o;
+    }
+
+    function ytSkipCategories(ytSkip) {
+        const on = Object.assign(defaultYtSkip(), ytSkip || {});
+        return YT_SKIP_OPTIONS.filter((x) => on[x.key] !== false).reduce((a, x) => a.concat(x.sb), []);
+    }
+
+    /* Privacy-preserving lookup: only the first 4 hex chars of sha256(videoId) leave the device. */
+    function sponsorBlockUrl(hashPrefix, categories) {
+        return SPONSORBLOCK_API + encodeURIComponent(hashPrefix) + "?categories=" + encodeURIComponent(JSON.stringify(categories)) + "&actionTypes=" + encodeURIComponent(JSON.stringify(["skip"]));
+    }
+
+    /* API answer (array of { videoID, segments }) -> engine filters for this video, enabled options only. */
+    function sponsorBlockToFilters(answer, videoId, ytSkip) {
+        const cats = new Set(ytSkipCategories(ytSkip));
+        const entry = (Array.isArray(answer) ? answer : []).find((x) => x && x.videoID === videoId);
+        const out = [];
+        ((entry && entry.segments) || []).forEach((sg) => {
+            if (!sg || !cats.has(sg.category) || (sg.actionType && sg.actionType !== "skip")) return;
+            const seg = sg.segment || [];
+            const start = Number(seg[0]), end = Number(seg[1]);
+            if (!isFinite(start) || !isFinite(end) || end - start < 0.5) return;
+            const opt = YT_SKIP_OPTIONS.find((x) => x.sb.indexOf(sg.category) !== -1);
+            out.push({
+                id: "sb-" + (sg.UUID || (sg.category + "-" + start)), start, end, action_type: "skip",
+                category: "youtube", original_description: opt ? opt.label : sg.category, source: "sponsorblock"
+            });
+        });
+        return out.sort((a, b) => a.start - b.start);
     }
 
     /* ---------- Which <video> is the title (ads and short previews are skipped) ---------- */
@@ -518,7 +566,8 @@
         titleGroupStates, toggleTitleGroupStore, subtitleCategoryEnabled,
         timing, actionOf, resolveActiveFilters, createMuteArbiter, validateLibrary,
         isAdOrPreviewVideo, titleVideoCandidates,
-        normalizeId, findLibraryItem, idAppearsAsWholeSegment
+        normalizeId, findLibraryItem, idAppearsAsWholeSegment,
+        YT_SKIP_OPTIONS, defaultYtSkip, ytSkipCategories, sponsorBlockUrl, sponsorBlockToFilters
     };
     if (root) root.SalikFilterCore = api;
     if (typeof module === "object" && module && module.exports) module.exports = api;

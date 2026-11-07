@@ -139,6 +139,31 @@ class SalikBackend private constructor(private val context: Context) {
         return JSONObject().put("success", true).put("data", normalizePlatformKeys(item))
     }
 
+    /**
+     * YouTube skip segments from SponsorBlock (sponsor.ajay.app, CC BY-NC-SA 4.0). Only the first 4 hex chars
+     * of sha256(videoId) are sent; the page picks its own video from the answer.
+     */
+    fun fetchSponsorBlock(prefix: String, categories: org.json.JSONArray?): JSONObject {
+        if (!Regex("^[0-9a-f]{4}$").matches(prefix)) return JSONObject().put("success", false).put("error", "bad prefix")
+        val cats = org.json.JSONArray()
+        for (i in 0 until (categories?.length() ?: 0)) categories!!.optString(i).takeIf { Regex("^[a-z_]+$").matches(it) }?.let { cats.put(it) }
+        if (cats.length() == 0) return JSONObject().put("success", true).put("data", org.json.JSONArray())
+        val enc = { v: String -> java.net.URLEncoder.encode(v, "UTF-8") }
+        val url = "https://sponsor.ajay.app/api/skipSegments/$prefix?categories=${enc(cats.toString())}&actionTypes=${enc("[\"skip\"]")}"
+        return runCatching {
+            val conn = URL(url).openConnection() as HttpURLConnection
+            try {
+                conn.connectTimeout = 10_000
+                conn.readTimeout = 15_000
+                when (val code = conn.responseCode) {
+                    404 -> JSONObject().put("success", true).put("data", org.json.JSONArray())
+                    in 200..299 -> JSONObject().put("success", true).put("data", org.json.JSONArray(conn.inputStream.bufferedReader().use { it.readText() }))
+                    else -> JSONObject().put("success", false).put("error", "HTTP $code")
+                }
+            } finally { conn.disconnect() }
+        }.getOrElse { JSONObject().put("success", false).put("error", it.message ?: "FETCH_FAILED") }
+    }
+
     /** The engine looks platforms up by lowercase name (offset_seconds etc.); guard against "Netflix". */
     private fun normalizePlatformKeys(item: JSONObject): JSONObject {
         val platforms = item.optJSONObject("platforms") ?: return item

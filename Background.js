@@ -43,6 +43,27 @@ async function fetchAuthenticatedLibrary() {
 }
 
 
+/* YouTube skip segments from SponsorBlock (sponsor.ajay.app). Only a 4-char hash prefix of the video id is sent. */
+const __salikSbCache = new Map();
+async function nazafaFetchSponsorBlock(prefix, categories) {
+    if (!/^[0-9a-f]{4}$/.test(prefix)) throw new Error("bad prefix");
+    const cats = Array.isArray(categories) ? categories.filter((c) => /^[a-z_]+$/.test(c)) : [];
+    if (!cats.length) return [];
+    const url = SalikFilterCore.sponsorBlockUrl(prefix, cats);
+    const hit = __salikSbCache.get(url);
+    if (hit && Date.now() - hit.at < 30 * 60 * 1000) return hit.data;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), SALIK_FETCH_TIMEOUT_MS);
+    try {
+        const res = await fetch(url, { signal: ctrl.signal });
+        const data = res.status === 404 ? [] : (res.ok ? await res.json() : null);
+        if (data === null) throw new Error("HTTP " + res.status);
+        __salikSbCache.set(url, { at: Date.now(), data });
+        if (__salikSbCache.size > 200) __salikSbCache.delete(__salikSbCache.keys().next().value);
+        return data;
+    } finally { clearTimeout(timer); }
+}
+
 // ===== حالة التطبيق (إصدار أحدث / إصدار أدنى / إشعار) من GitHub =====
 const NAZAFA_APP_STATUS_ALARM = "nazafa-app-status";
 const NAZAFA_STATUS_MIN_GAP_MS = 60 * 60 * 1000;
@@ -129,6 +150,13 @@ if (request.type === "FETCH_FILTERS_BACKGROUND") {
 
     return true;
 }
+
+    if (request.type === "FETCH_SPONSORBLOCK") {
+        nazafaFetchSponsorBlock(String(request.prefix || ""), request.categories)
+            .then((data) => sendResponse({ success: true, data }))
+            .catch((e) => sendResponse({ success: false, error: (e && e.message) || String(e) }));
+        return true;
+    }
 
     if (request.type === "FETCH_LIBRARY_DATA") {
         (async () => {
