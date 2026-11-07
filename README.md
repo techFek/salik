@@ -24,8 +24,8 @@ Salik does not host or download any video content. In the browser and the apps i
 | Platform | How to install |
 |---|---|
 | 💻 **Chrome extension** | Install from the [Chrome Web Store](https://chromewebstore.google.com/detail/salik-%E2%80%A2-%D8%B3%D8%A7%D9%84%D9%83/ngehcikconlnhlhhfbgemloihlkmiibb) → **Add to Chrome** (also works in Edge) |
-| 📱 **Android** | Download [Salik-Android.apk](https://github.com/techFek/salik/releases/download/v1.0.0/Salik-Android-1.0.0.apk) → open it → allow installing from unknown sources |
-| 📺 **Android TV / Google TV** | On your TV: install **Downloader** from Google Play → allow it to install unknown apps → open it, enter code **2334683** and press Go → Install. Or [download the APK](https://github.com/techFek/salik/releases/download/v1.0.0/Salik-AndroidTV-1.0.0.apk) and copy it with a USB drive |
+| 📱 **Android** | Download [Salik-Android.apk](https://github.com/techFek/salik/releases/download/v1.1.0/Salik-Android-1.1.0.apk) → open it → allow installing from unknown sources |
+| 📺 **Android TV / Google TV** | On your TV: install **Downloader** from Google Play → allow it to install unknown apps → open it, enter code **2334683** and press Go → Install. Or [download the APK](https://github.com/techFek/salik/releases/download/v1.1.0/Salik-AndroidTV-1.1.0.apk) and copy it with a USB drive |
 | 🎬 **Stremio (any device, incl. Samsung TVs)** | Run the [Stremio addon](stremio-addon/README.md) on your computer and install it in Stremio |
 
 All releases: [Releases](https://github.com/techFek/salik/releases)
@@ -141,8 +141,8 @@ Salik is and will always be free. Donations are **optional** and are not commerc
 | المنصة | طريقة التثبيت |
 |---|---|
 | 💻 **إضافة كروم** | ثبّتها من [Chrome Web Store](https://chromewebstore.google.com/detail/salik-%E2%80%A2-%D8%B3%D8%A7%D9%84%D9%83/ngehcikconlnhlhhfbgemloihlkmiibb) ← **Add to Chrome** (تعمل أيضًا على Edge) |
-| 📱 **أندرويد** | [نزّل Salik-Android.apk](https://github.com/techFek/salik/releases/download/v1.0.0/Salik-Android-1.0.0.apk) ← افتح الملف ← اسمح بالتثبيت من مصادر غير معروفة |
-| 📺 **أندرويد TV و Google TV** | على التلفاز: ثبّت تطبيق **Downloader** من Google Play ← اسمح له بتثبيت التطبيقات ← افتحه وأدخل الرمز **2334683** ثم اضغط Go ← Install. أو [نزّل الملف](https://github.com/techFek/salik/releases/download/v1.0.0/Salik-AndroidTV-1.0.0.apk) وانقله إلى التلفاز عبر ذاكرة USB |
+| 📱 **أندرويد** | [نزّل Salik-Android.apk](https://github.com/techFek/salik/releases/download/v1.1.0/Salik-Android-1.1.0.apk) ← افتح الملف ← اسمح بالتثبيت من مصادر غير معروفة |
+| 📺 **أندرويد TV و Google TV** | على التلفاز: ثبّت تطبيق **Downloader** من Google Play ← اسمح له بتثبيت التطبيقات ← افتحه وأدخل الرمز **2334683** ثم اضغط Go ← Install. أو [نزّل الملف](https://github.com/techFek/salik/releases/download/v1.1.0/Salik-AndroidTV-1.1.0.apk) وانقله إلى التلفاز عبر ذاكرة USB |
 | 🎬 **Stremio (أي جهاز، ومنها تلفزيونات سامسونج)** | شغّل [إضافة Stremio](stremio-addon/README.md) على حاسوبك وثبّتها في Stremio |
 
 كل الإصدارات: [Releases](https://github.com/techFek/salik/releases)
