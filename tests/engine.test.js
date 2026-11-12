@@ -150,3 +150,13 @@ test("3: main.script.js uses the mute sources, no shared owner flags", () => {
     for (const s of ['acquire("library")', 'release("library")', 'acquire("yt-subs")', 'release("yt-subs")']) assert.ok(src.includes("nazafaMute." + s), s);
     assert.doesNotMatch(src, /nazafaYtTimedHolding|nazafaMuteOwner/);
 });
+
+test("mutes start with their own (shorter) lead; skips keep the general lead", () => {
+    const skip = { id: 9, category: "nudity", original_description: "x", start: 20, end: 25, action_type: "skip" };
+    const fs2 = [mute(1, 10, 11), skip];
+    const opts = { lead: 0.3, muteLead: 0.1 };
+    assert.equal(Core.resolveActiveFilters(fs2, 9.8, opts).mute, null);
+    assert.equal(Core.resolveActiveFilters(fs2, 9.95, opts).mute.id, 1);
+    assert.equal(Core.resolveActiveFilters(fs2, 19.75, opts).skip.id, 9);
+    assert.equal(Core.resolveActiveFilters(fs2, 9.8, { lead: 0.3 }).mute.id, 1);
+});

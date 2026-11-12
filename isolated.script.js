@@ -99,6 +99,8 @@ let isExecutingAction = false;
 let lastCheckTime = 0;
 let nazafaNearFilter = false;
 const NAZAFA_ACTION_LEAD_S = 0.3;
+/* Profanity timings already include padding, so mutes start closer to the word. */
+const NAZAFA_MUTE_LEAD_S = 0.1;
 const NAZAFA_NEAR_WINDOW_S = 3;
 let nazafaLastMatchedFilterId = null;
 
@@ -563,6 +565,7 @@ function processActiveFilters() {
         disabledIds: disabledFilterIds,
         settings: filterSettings,
         lead: NAZAFA_ACTION_LEAD_S,
+        muteLead: NAZAFA_MUTE_LEAD_S,
         nearWindow: NAZAFA_NEAR_WINDOW_S
     });
     nazafaNearFilter = resolved.near;

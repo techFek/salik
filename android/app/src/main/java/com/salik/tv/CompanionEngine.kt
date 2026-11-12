@@ -40,6 +40,7 @@ class CompanionEngine(private val context: Context, private val listener: Compon
         /** While nothing is being filtered, checking twice a second is enough. */
         private const val IDLE_TICK_MS = 500L
         private const val LEAD_S = 0.3
+        private const val MUTE_LEAD_S = 0.1
         private const val ASK_AFTER_PLAYING_MS = 2500L
 
         /** Known video apps -> Salik platform key (phone and TV builds). */
@@ -161,8 +162,9 @@ class CompanionEngine(private val context: Context, private val listener: Compon
         for (i in 0 until filters.length()) {
             val f = filters.optJSONObject(i) ?: continue
             val start = f.optDouble("start"); val end = f.optDouble("end")
-            if (!(t >= start - LEAD_S && t <= end)) continue
-            when (f.optString("action")) {
+            val action = f.optString("action")
+            if (!(t >= start - (if (action == "mute") MUTE_LEAD_S else LEAD_S) && t <= end)) continue
+            when (action) {
                 "skip" -> if (end > t && (skip == null || end > skip.optDouble("end"))) skip = f
                 "mute" -> mute = true
                 "blur", "partial_blur" -> if (blur == null) blur = f

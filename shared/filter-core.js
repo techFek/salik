@@ -326,6 +326,8 @@
         const o = opts || {};
         const disabled = o.disabledIds || {};
         const lead = o.lead || 0;
+        /* Mutes may start later than skips and blurs: the library's word timings already carry padding. */
+        const muteLead = o.muteLead !== undefined ? o.muteLead : lead;
         const result = { skip: null, blur: null, mute: null, any: false, near: false };
         (filters || []).forEach((f) => {
             if (!f || disabled[f.id]) return;
@@ -334,9 +336,9 @@
             /* SponsorBlock segments are switched on/off by their own YouTube options, not the library groups. */
             const allowed = f.source === "sponsorblock" || f.source === "youtube-captions" || shouldFilter(f, o.settings);
             if (o.nearWindow && tm.start - time > -1 && tm.start - time < o.nearWindow && allowed) result.near = true;
-            if (time < tm.start - lead || time > tm.end) return;
             if (!allowed) return;
             const a = actionOf(f);
+            if (time < tm.start - (a === "mute" ? muteLead : lead) || time > tm.end) return;
             if (a === "skip") {
                 if (tm.end > time && (!result.skip || tm.end > timing(result.skip).end)) result.skip = f;
             } else if (a === "blur" || a === "partial_blur") {
