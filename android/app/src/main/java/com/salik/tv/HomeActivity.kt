@@ -40,11 +40,32 @@ class HomeActivity : Activity() {
     private val settings by lazy { getSharedPreferences("salik_settings", MODE_PRIVATE) }
     private val extStorage by lazy { getSharedPreferences("salik_ext_storage", MODE_PRIVATE) }
 
+    /** Set when companion mode opened the catalog to ask which title is playing in another app. */
+    @Volatile private var companionAsk: JSONObject? = null
+
+    private fun readCompanionAsk(intent: Intent?) {
+        val key = intent?.getStringExtra("companionKey") ?: return
+        companionAsk = JSONObject()
+            .put("key", key)
+            .put("package", intent.getStringExtra("companionPackage") ?: "")
+            .put("platform", intent.getStringExtra("companionPlatform") ?: "")
+            .put("duration", intent.getLongExtra("companionDuration", 0L))
+            .put("title", intent.getStringExtra("companionTitle") ?: "")
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        readCompanionAsk(intent)
+        val ask = companionAsk ?: return
+        if (::webView.isInitialized) webView.evaluateJavascript("window.salikCompanionAsk && window.salikCompanionAsk(${ask})", null)
+    }
+
     @SuppressLint("SetJavaScriptEnabled", "JavascriptInterface")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         SalikLog.init(this)
         backend = SalikBackend.get(this)
+        readCompanionAsk(intent)
         WebView.setWebContentsDebuggingEnabled((applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0)
 
         val loader = WebViewAssetLoader.Builder()
@@ -111,6 +132,16 @@ class HomeActivity : Activity() {
         .put("hideMale", settings.getBoolean("hideMale", false))
         .put("stremioOrigin", SalikConfig.stremioServerOrigin(this) ?: "")
         .put("stremioStreaming", SalikConfig.stremioStreamingUrl(this) ?: "")
+        .put("companionEnabled", CompanionEngine.isEnabled(this))
+        .put("companionAccess", companionAccess())
+        .put("companionOverlay", CompanionEngine.canOverlay(this))
+        .put("companionAsk", companionAsk ?: JSONObject.NULL)
+
+    private fun companionAccess(): Boolean {
+        val me = android.content.ComponentName(this, MediaListener::class.java)
+        val enabled = android.provider.Settings.Secure.getString(contentResolver, "enabled_notification_listeners").orEmpty()
+        return enabled.split(":").any { it.equals(me.flattenToString(), true) || it.equals(me.flattenToShortString(), true) }
+    }
 
     private fun readValue(area: String, key: String): Any? =
         extStorage.getString("$area::$key", null)?.let { runCatching { JSONArray(it).get(0) }.getOrNull() }
@@ -195,6 +226,39 @@ class HomeActivity : Activity() {
         fun setStremioServer(address: String) {
             settings.edit().putString("stremioServer", address.trim().take(200)).apply()
         }
+
+        /** Companion mode (experimental): filter video playing in other apps. */
+        @JavascriptInterface
+        fun setCompanionEnabled(enabled: Boolean) {
+            settings.edit().putBoolean("companionEnabled", enabled).apply()
+        }
+
+        @JavascriptInterface
+        fun openCompanionAccess() = runOnUiThread {
+            runCatching { startActivity(Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)) }
+                .onFailure { android.widget.Toast.makeText(this@HomeActivity, Lang.t(this@HomeActivity, "هذا الجهاز لا يعرض الإعداد؛ راجع دليل وضع المرافق", "This device hides the setting; see the companion guide"), android.widget.Toast.LENGTH_LONG).show() }
+        }
+
+        @JavascriptInterface
+        fun openOverlaySettings() = runOnUiThread {
+            val i = Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION, android.net.Uri.parse("package:$packageName"))
+            runCatching { startActivity(i) }.onFailure { runCatching { startActivity(Intent(android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION)) } }
+        }
+
+        /** The title the user picked for the app that is playing: filters already chosen by the catalog (settings applied). */
+        @JavascriptInterface
+        fun companionChoose(json: String) {
+            val o = runCatching { JSONObject(json) }.getOrNull() ?: return
+            val key = o.optString("key").takeIf { it.isNotEmpty() } ?: return
+            o.remove("key")
+            CompanionStore.put(this@HomeActivity, key, o)
+            companionAsk = null
+            SalikLog.d(TAG, "companion: $key -> ${o.optString("libraryKey").ifEmpty { "none" }} (${o.optJSONArray("filters")?.length() ?: 0} scenes)")
+            runOnUiThread { moveTaskToBack(true) }
+        }
+
+        @JavascriptInterface
+        fun companionForget() { CompanionStore.clear(this@HomeActivity) }
 
         @JavascriptInterface
         fun shareLog() = runOnUiThread { shareDiagnosticLog(this@HomeActivity) }

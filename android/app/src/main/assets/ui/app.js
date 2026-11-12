@@ -11,7 +11,8 @@ import { GUIDE } from "./guide.js";
 
 const native = window.SalikApp || {
   openUrl: (u) => window.open(u), openExternal: (u) => window.open(u),
-  setEngineEnabled() {}, setYoutubeTv() {}, setStremioServer() {}, setGenderBlur() {}, shareLog() {}, exitApp() {}
+  setEngineEnabled() {}, setYoutubeTv() {}, setStremioServer() {}, setGenderBlur() {}, shareLog() {}, exitApp() {},
+  setCompanionEnabled() {}, openCompanionAccess() {}, openOverlaySettings() {}, companionChoose() {}, companionForget() {}
 };
 
 const EN = LANG === "en";
@@ -142,7 +143,22 @@ const STR = {
   loadingHint: ["يستغرق ذلك ثواني في المرة الأولى فقط.", "This takes a few seconds the first time only."],
   loadFail: ["تعذّر تحميل المكتبة", "Couldn't load the library"],
   loadFailHint: ["تأكد من الاتصال بالإنترنت ثم أعد المحاولة.", "Check your internet connection and try again."],
-  retry: ["إعادة المحاولة", "Try again"]
+  retry: ["إعادة المحاولة", "Try again"],
+  compTitle: ["سالك: ماذا تشاهد على {p}؟", "Salik: what are you watching on {p}?"],
+  compTitleAny: ["سالك: ماذا تشاهد الآن؟", "Salik: what are you watching now?"],
+  compHint: ["اختر العمل مرة واحدة، وسيتذكره سالك ويطبّق عليه إعداداتك تلقائيًا ثم يعيدك إلى التطبيق.", "Pick the title once; Salik remembers it, applies your settings and takes you back to the app."],
+  compPlaying: ["يُعرض الآن: {t}", "Now playing: {t}"],
+  compNone: ["ليس في القائمة / لا تفلترة", "Not in the list / don't filter"],
+  compSaved: ["تم. سالك يفلتر «{t}» ({n} مشهدًا)", "Done. Salik filters “{t}” ({n} scenes)"],
+  compSection: ["وضع المرافق (تجريبي)", "Companion mode (beta)"],
+  compSectionHint: ["يفلتر ما تشاهده داخل التطبيقات الأخرى (Apple TV وOSN+ وNetflix…): تخطٍّ وكتم وشاشة سوداء بدل التغبيش.", "Filters video in other apps (Apple TV, OSN+, Netflix…): skip, mute, and a dark screen instead of blur."],
+  compEnable: ["تشغيل وضع المرافق", "Turn on companion mode"],
+  compAccess: ["صلاحية «الوصول إلى الإشعارات»", "“Notification access” permission"],
+  compOverlay: ["صلاحية «الظهور فوق التطبيقات»", "“Display over other apps” permission"],
+  compGranted: ["✅ ممنوحة", "✅ Granted"],
+  compMissing: ["❌ غير ممنوحة: اضغط لفتح الإعداد", "❌ Not granted: press to open the setting"],
+  compForget: ["نسيان الأعمال المختارة", "Forget picked titles"],
+  compForgot: ["سيسألك سالك من جديد عند التشغيل القادم.", "Salik will ask again next time."]
 };
 const T = (k, vars) => {
   let s = (STR[k] || [k, k])[EN ? 1 : 0];
@@ -532,6 +548,15 @@ async function renderSettings() {
           <button class="group-row" data-nav data-fid="source" data-source>
             <span class="gr-main"><span class="gr-name">${T("sourceCode")}</span><br><span class="gr-sub" dir="ltr">github.com/techFek/salik</span></span></button>
         </div>
+        <div class="panel" style="margin-top:20px"><h3>${T("compSection")}</h3><p class="hint">${T("compSectionHint")}</p>
+          <button class="group-row ${a.companionEnabled ? "on" : ""}" data-nav data-fid="comp-on" data-companion-toggle>
+            <span class="gr-main"><span class="gr-name">${T("compEnable")}</span></span><i class="toggle ${a.companionEnabled ? "on" : ""}"></i></button>
+          <button class="group-row" data-nav data-fid="comp-access" data-companion-access>
+            <span class="gr-main"><span class="gr-name">${T("compAccess")}</span><br><span class="gr-sub">${a.companionAccess ? T("compGranted") : T("compMissing")}</span></span></button>
+          <button class="group-row" data-nav data-fid="comp-overlay" data-companion-overlay>
+            <span class="gr-main"><span class="gr-name">${T("compOverlay")}</span><br><span class="gr-sub">${a.companionOverlay ? T("compGranted") : T("compMissing")}</span></span></button>
+          <button class="group-row" data-nav data-fid="comp-forget" data-companion-forget><span class="gr-main"><span class="gr-name">${T("compForget")}</span></span></button>
+        </div>
         <div class="panel" style="margin-top:20px"><h3>${T("platforms")}</h3><p class="hint">${T("loginHint")}</p>
           <div class="link-list">${Object.keys(PLATFORMS).map((p) => `<button class="link-row" style="--pc:${PLATFORMS[p].color}" data-nav data-fid="lp-${p}" data-platform-home="${p}"><b><bdi>${pMark(p)}</bdi></b><span>${T("openSignIn")}</span></button>`).join("")}</div>
         </div>
@@ -586,8 +611,9 @@ async function rerender(restoreFid) {
   else if (scr.name === "details") await renderDetails(scr.key);
   else if (scr.name === "settings") await renderSettings();
   else if (scr.name === "guide") renderGuide();
+  else if (scr.name === "companion") renderCompanion();
   if (restoreFid === null) $view.scrollTo({ top: 0, behavior: "instant" });
-  const target = (fid && $view.querySelector(`[data-fid="${CSS.escape(fid)}"]`)) || $view.querySelector("[data-nav]");
+  const target = (fid && $view.querySelector(`[data-fid="${CSS.escape(fid)}"]`)) || (scr.name === "companion" && $view.querySelector("#comp-list [data-nav]")) || $view.querySelector("[data-nav]");
   if (target && !$modalRoot.firstChild) focusEl(target, true);
 }
 
@@ -608,8 +634,84 @@ window.salikBack = function () {
   return false;
 };
 window.salikResume = function () {
+  if (current().name === "settings") { refreshApp().then(() => { if (current().name === "settings" && !$modalRoot.firstChild) rerender(); }); return; }
   if (current().name === "home" && !$modalRoot.firstChild) rerender();
 };
+const refreshApp = () => fetch("/data/app.json").then((r) => r.json()).then((a) => { S.app = a; }).catch(() => {});
+
+/* ---------- Companion mode: which title is playing in another app ---------- */
+
+window.salikCompanionAsk = function (ask) {
+  S.companion = { ask, q: "" };
+  closeModal();
+  if (!S.items || !S.items.length) return;
+  S.stack = [{ name: "home" }];
+  go({ name: "companion" });
+};
+
+function companionCandidates() {
+  const c = S.companion || {};
+  const p = c.ask?.platform || "";
+  const q = normalizeQ(c.q || "");
+  const label = (it) => {
+    if (it.type !== "episode") return it.title;
+    const series = S.byKey[it.parent_series_id]?.title || it.parent_series_id || "";
+    return normalizeQ(it.title).includes(normalizeQ(series)) ? it.title : `${series} · ${it.title}`;
+  };
+  const rows = S.items.filter((it) => it.type !== "series" && (it.filters || []).length)
+    .map((it) => ({ it, label: label(it), on: !!(p && it.platforms[p]) }))
+    .filter((r) => !q || normalizeQ(r.label).includes(q) || normalizeQ(r.it.key).includes(q));
+  rows.sort((a, b) => (b.on - a.on) || a.label.localeCompare(b.label, "ar"));
+  return rows.slice(0, 80);
+}
+const normalizeQ = (v) => String(v || "").toLowerCase().replace(/[أإآ]/g, "ا").replace(/ة/g, "ه").replace(/ى/g, "ي").trim();
+
+function renderCompanionList() {
+  const list = document.getElementById("comp-list");
+  if (!list) return;
+  list.innerHTML = companionCandidates().map((r) => `<button class="group-row" data-nav data-fid="cp-${esc(r.it.key)}" data-companion-pick="${esc(r.it.key)}">
+      <span class="gr-main"><span class="gr-name"><bdi>${esc(r.label)}</bdi></span>${r.on ? `<br><span class="gr-sub"><bdi>${esc(pMark(S.companion.ask.platform))}</bdi></span>` : ""}</span></button>`).join("");
+}
+
+function renderCompanion() {
+  const ask = S.companion?.ask;
+  if (!ask) { goHome(); return; }
+  const p = PLATFORMS[ask.platform] ? ask.platform : "";
+  const playing = [ask.title, ask.duration ? clock(ask.duration) : ""].filter(Boolean).join(" · ");
+  $view.innerHTML = `<div class="page">
+    <div class="acc-head"><div><h1>${p ? T("compTitle", { p: esc(pName(p)) }) : T("compTitleAny")}</h1>
+      <p>${T("compHint")}</p>${playing ? `<p class="hint">${T("compPlaying", { t: `<bdi>${esc(playing)}</bdi>` })}</p>` : ""}</div></div>
+    <div class="browse-head"><input id="comp-search" class="search" type="search" data-nav data-fid="comp-search" placeholder="${T("search")}" value="${esc(S.companion.q)}" autocomplete="off"></div>
+    <button class="group-row" data-nav data-fid="cp-none" data-companion-none><span class="gr-main"><span class="gr-name">${T("compNone")}</span></span></button>
+    <div id="comp-list" class="panel"></div></div>`;
+  renderCompanionList();
+  document.getElementById("comp-search").addEventListener("input", (e) => { S.companion.q = e.target.value; renderCompanionList(); });
+}
+
+async function companionPick(key) {
+  const ask = S.companion?.ask;
+  if (!ask) return;
+  const core = globalThis.SalikFilterCore;
+  let payload;
+  if (key) {
+    const item = S.byKey[key];
+    const off = (await getDisabledFiltersStore())[item.key] || {};
+    const filters = (item.filters || []).filter((f) => !off[f.id] && allowedBySettings(f)).map((f) => {
+      const tm = core.timing(f);
+      if (!tm) return null;
+      const a = core.actionOf(f);
+      const action = a.includes("blur") ? a : (a === "skip" ? "skip" : "mute");
+      return { id: String(f.id), start: tm.start, end: tm.end, action, desc: f.original_description || f.description || "" };
+    }).filter(Boolean);
+    const offset = Number(item.platforms[ask.platform]?.offset_seconds) || 0;
+    payload = { key: ask.key, libraryKey: item.key, title: item.title, offset, filters };
+    toast(T("compSaved", { t: item.title, n: fmt(filters.length) }));
+  } else payload = { key: ask.key, none: true };
+  S.companion = null;
+  if (S.app) S.app.companionAsk = null;
+  native.companionChoose(JSON.stringify(payload));
+  goHome();
+}
 
 function watchUrl(item, p) {
   let url = getUrlForPlatform(item, p) || item.platforms?.[p]?.url;
@@ -698,6 +800,12 @@ document.addEventListener("click", async (e) => {
   }
   if (d.watch) { closeModal(); watch(d.watch, d.platform); return; }
   if (d.platformHome) { native.openUrl(platformHome(d.platformHome), d.platformHome); return; }
+  if (d.companionPick) { companionPick(d.companionPick); return; }
+  if (d.companionNone !== undefined) { companionPick(null); return; }
+  if (d.companionToggle !== undefined) { const on = !S.app?.companionEnabled; native.setCompanionEnabled(on); S.app = { ...(S.app || {}), companionEnabled: on }; rerender(el.dataset.fid); return; }
+  if (d.companionAccess !== undefined) { native.openCompanionAccess(); return; }
+  if (d.companionOverlay !== undefined) { native.openOverlaySettings(); return; }
+  if (d.companionForget !== undefined) { native.companionForget(); toast(T("compForgot")); return; }
   if (d.retry !== undefined) { await load(true); return; }
   if (d.season) { current().season = Number(d.season); rerender(el.dataset.fid); return; }
   if (d.type) { S.browse.type = d.type; rerender(el.dataset.fid); return; }
@@ -944,6 +1052,7 @@ $rail.addEventListener("click", (e) => { if (e.target.closest(".rail-item")) set
   sessionStorage.removeItem("salik.route");
   if (after === "settings") S.stack = [{ name: "home" }, { name: "settings" }];
   await load(false);
+  if (S.app?.companionAsk && !S.error) window.salikCompanionAsk(S.app.companionAsk);
   fetch("/data/library-fresh.json").then((r) => r.json()).then((lib) => {
     if (lib.__error) return;
     const before = JSON.stringify(Object.keys(S.byKey).length);
