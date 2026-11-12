@@ -1,0 +1,411 @@
+{
+  "addedAt": 1794436000879,
+  "category": "Hollywood",
+  "description": "يتتبع الفيلم رحلة أوديسيوس، الملك الأسطوري لـ \"إيثاكا\"، في عودته الطويلة والخطرة إلى وطنه بعد انتهاء حرب طروادة. تستغرق رحلته عشر سنوات، وخلالها يواجه أوديسيوس العديد من التحديات والمخاطر والمخلوقات الأسطورية",
+  "filters": [
+    {
+      "action_type": "skip",
+      "category": "violence",
+      "end": 118.67,
+      "id": 1,
+      "original_description": "شخص يُقتل برمح",
+      "start": 115.94
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 199.16,
+      "id": 2,
+      "original_description": "wine",
+      "start": 198.73
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 275.65,
+      "id": 3,
+      "original_description": "wine",
+      "start": 274.95
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 288.62,
+      "id": 4,
+      "original_description": "bastard",
+      "start": 287.94
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 324.53,
+      "id": 5,
+      "original_description": "god",
+      "start": 324.33
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 327.79,
+      "id": 6,
+      "original_description": "god",
+      "start": 327.52
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 488.78,
+      "id": 7,
+      "original_description": "damned",
+      "start": 488.32
+    },
+    {
+      "action_type": "skip",
+      "category": "violence",
+      "end": 950.25,
+      "id": 8,
+      "original_description": "صفعة على الوجه",
+      "start": 949.72
+    },
+    {
+      "action_type": "skip",
+      "category": "nudity",
+      "end": 1012.54,
+      "id": 9,
+      "original_description": "امرأة تقبل رجل",
+      "start": 987.58
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 1182.68,
+      "id": 10,
+      "original_description": "fool",
+      "start": 1182.21
+    },
+    {
+      "action_type": "skip",
+      "category": "violence",
+      "end": 1242.99,
+      "id": 11,
+      "original_description": "مضاربة بالسيف",
+      "start": 1235.62
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 1268.85,
+      "id": 12,
+      "original_description": "wine",
+      "start": 1268.3
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 1499.71,
+      "id": 13,
+      "original_description": "god",
+      "start": 1499.23
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 1605.43,
+      "id": 14,
+      "original_description": "fucking",
+      "start": 1604.8
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 1761.84,
+      "id": 15,
+      "original_description": "bastard",
+      "start": 1760.28
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 1856.73,
+      "id": 16,
+      "original_description": "bastard",
+      "start": 1855.63
+    },
+    {
+      "action_type": "skip",
+      "category": "violence",
+      "end": 2143.9,
+      "id": 17,
+      "original_description": "شخص بعين واحدة يأكل شخص",
+      "start": 2115.61
+    },
+    {
+      "action_type": "skip",
+      "category": "violence",
+      "end": 2292.61,
+      "id": 18,
+      "original_description": "شخص بعين واحدة يأكل شخص",
+      "start": 2286.52
+    },
+    {
+      "action_type": "skip",
+      "category": "violence",
+      "end": 2441.36,
+      "id": 19,
+      "original_description": "رمح في شخص بعين واحدة",
+      "start": 2438.79
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 2977.89,
+      "id": 20,
+      "original_description": "piss",
+      "start": 2977.28
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 2978.52,
+      "id": 21,
+      "original_description": "shit",
+      "start": 2978
+    },
+    {
+      "action_type": "skip",
+      "category": "violence",
+      "end": 3765.51,
+      "id": 22,
+      "original_description": "معركة العمالقة",
+      "start": 3738.59
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 3881,
+      "id": 23,
+      "original_description": "bastard",
+      "start": 3879.94
+    },
+    {
+      "action_type": "blur",
+      "category": "nudity",
+      "end": 4325.14,
+      "id": 24,
+      "original_description": "رجل عاري",
+      "start": 4321.13
+    },
+    {
+      "action_type": "skip",
+      "category": "violence",
+      "end": 4394.79,
+      "id": 25,
+      "original_description": "مسخ البشر إلى خنازير",
+      "start": 4331.11
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 4706.56,
+      "id": 26,
+      "original_description": "hot",
+      "start": 4706.12
+    },
+    {
+      "action_type": "skip",
+      "category": "nudity",
+      "end": 4774.62,
+      "id": 27,
+      "original_description": "تتحول الخنازير إلى جنود عراة",
+      "start": 4764.24
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 4832.14,
+      "id": 28,
+      "original_description": "hell",
+      "start": 4831.55
+    },
+    {
+      "action_type": "skip",
+      "category": "violence",
+      "end": 4931.22,
+      "id": 29,
+      "original_description": "معتقدات وثنية بتقديم القرابين لعالم الموتى",
+      "start": 4901.01
+    },
+    {
+      "action_type": "blur",
+      "category": "violence",
+      "end": 4969.01,
+      "id": 30,
+      "original_description": "تم تخطي مشهد استحضار الأرواح في عالم الموتى بالكامل، بما يحويه من طقوس القرابين الدموية وظهور الأشباح وموقف  الجندي سينون الذي كان يلوم اوديسيوس بما حدث معه ومشهد مقتل اغممانيوم الذي قُتل على يد هيلين ، نظراً لاحتوائه على معتقدات وثنية ومشاهد دموية ومقززة، ويكفي تماماً معرفة أن أوديسيوس تلقى تحذيراً صارماً بالابتعاد عن الحوريات والوحش سيلا وأبقار الجزيرة القادمة ومنع جنوده من اهواء انفسهم، ليتم الانتقال مباشرة لمتابعة الأحداث اللاحقة بسلاسة ودون إخلال بتسلسل القصة. يمكنك غلقها من قائمة المشاهد العنيفة والمقززة",
+      "start": 4963.81
+    },
+    {
+      "action_type": "skip",
+      "category": "violence",
+      "end": 5436.81,
+      "id": 31,
+      "original_description": "عالم الموتى والاشباح",
+      "start": 4969.01
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 5351.97,
+      "id": 32,
+      "original_description": "god",
+      "start": 5351.53
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 5457.68,
+      "id": 33,
+      "original_description": "hell",
+      "start": 5457.07
+    },
+    {
+      "action_type": "skip",
+      "category": "nudity",
+      "end": 5720.12,
+      "id": 34,
+      "original_description": "امرأة تقبل رجل",
+      "start": 5716.91
+    },
+    {
+      "action_type": "skip",
+      "category": "nudity",
+      "end": 5727.76,
+      "id": 35,
+      "original_description": "امرأة تقبل رجل",
+      "start": 5726.99
+    },
+    {
+      "action_type": "skip",
+      "category": "violence",
+      "end": 6296.49,
+      "id": 36,
+      "original_description": "هجوم الوحش",
+      "start": 6264.41
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 6527.66,
+      "id": 37,
+      "original_description": "god",
+      "start": 6527.27
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 6583.43,
+      "id": 38,
+      "original_description": "damned",
+      "start": 6582.73
+    },
+    {
+      "action_type": "skip",
+      "category": "language",
+      "end": 6686.18,
+      "id": 39,
+      "original_description": "دعاء اللآلهة الباطلة",
+      "start": 6680.88
+    },
+    {
+      "action_type": "skip",
+      "category": "violence",
+      "end": 7473.65,
+      "id": 40,
+      "original_description": "مضاربة المعبد",
+      "start": 7441.83
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 7797.54,
+      "id": 41,
+      "original_description": "bastards",
+      "start": 7796.93
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 8057.2,
+      "id": 42,
+      "original_description": "wine",
+      "start": 8056.79
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 8072.86,
+      "id": 43,
+      "original_description": "fuck",
+      "start": 8072.52
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 8077.28,
+      "id": 44,
+      "original_description": "fuck",
+      "start": 8076.85
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 8159.74,
+      "id": 45,
+      "original_description": "god",
+      "start": 8159.41
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 8164.55,
+      "id": 46,
+      "original_description": "god",
+      "start": 8164.12
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 8169.68,
+      "id": 47,
+      "original_description": "god",
+      "start": 8169.25
+    },
+    {
+      "action_type": "skip",
+      "category": "violence",
+      "end": 8576.27,
+      "id": 48,
+      "original_description": "معركة طروادة",
+      "start": 8553.04
+    },
+    {
+      "action_type": "skip",
+      "category": "violence",
+      "end": 9675.39,
+      "id": 49,
+      "original_description": "اوديسيوس زنق الخطاب وهاتك يا دعك",
+      "start": 9295.69
+    }
+  ],
+  "genre": "مغامرة, حركة, فانتازيا",
+  "pg": "+16",
+  "platforms": {
+    "stremio": {
+      "id": "tt33764258",
+      "url": "https://web.stremio.com/#/player/eAEBmgFl%2FnsiaW5mb0hhc2giOiJiZGE3ZjQ2OWVhN2I3NTVkY2ZlODZlODliYTRlNTA4OTVlNGJiOTY1IiwiZmlsZUlkeCI6MCwiYW5ub3VuY2UiOltdLCJuYW1lIjoiMTA4MHBcbihXRUItREwpXG7imIXimIXimIXimIUiLCJkZXNjcmlwdGlvbiI6IuKcjiBUaGUgT2R5c3NleSAoMjAyNilcbuKWoyBBVkNcbuKZrCA1LjFcbuKXiCAzLjE4IEdCIMK3IDIuNSBNYnBzIMK3IPCfkaQgNTM0XG7wn5uhIEVYVCDCtyBTVEFSQ0tGSUxNRVMgwrcgVG9ycmVudGlvXG7wn4%2BzIPCfh6zwn4enIPCfh7Xwn4e5IiwiYmVoYXZpb3JIaW50cyI6eyJiaW5nZUdyb3VwIjoidG9ycmVudGlvfDEwODBwfFdFQi1ETHx4MjY0IiwiZmlsZW5hbWUiOiJBLk9kaXNzZWlhLjIwMjYuV0VCLURMLjEwODBwLngyNjQuRU5HLjUuMS1TVEFSQ0tGSUxNRVMubWt2In19b0qSDQ%3D%3D/https%3A%2F%2Fce8c71dcef3b-filtorrent.baby-beamup.club%2Fmanifest.json/https%3A%2F%2Fv3-cinemeta.strem.io%2Fmanifest.json/movie/tt33764258/tt33764258"
+    }
+  },
+  "poster_url": "https://image.tmdb.org/t/p/w342/6hGsNgF2msPlIpX8xKQNRs1WxQ9.jpg",
+  "title": "The Odyssey",
+  "type": "movie",
+  "year": 2026
+}

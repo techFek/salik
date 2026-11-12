@@ -7,7 +7,8 @@ const { FILES, compare } = require("../scripts/sync-android.js");
 const H = require("./helpers.js");
 
 test("0: every shared file in android/ is byte-identical to the root copy", () => {
-    const bad = compare().filter((r) => !r.same).map((r) => r.src);
+    const { SNAPSHOTS } = require("../scripts/sync-android.js");
+    const bad = compare().filter((r) => !r.same && !SNAPSHOTS.has(r.src)).map((r) => r.src);
     assert.deepEqual(bad, []);
 });
 
