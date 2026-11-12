@@ -36,6 +36,30 @@
             android:exported="false"
             android:screenOrientation="sensorLandscape"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation" />
+        <!-- Experimental companion mode probe (test builds): its own launcher entry. -->
+        <activity
+            android:name=".CompanionProbeActivity"
+            android:exported="true"
+            android:label="Salik test"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboard|keyboardHidden|navigation">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- Only gives access to other apps' media sessions after the user allows "notification access". -->
+        <service
+            android:name=".MediaListener"
+            android:exported="true"
+            android:label="Salik"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="com.salik.tv.files"
