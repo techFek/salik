@@ -20,6 +20,7 @@ const FILES = [
     ["subtitles.script.js", "ext/subtitles.script.js"],
     ["app/services.js", "ui/ext-app/services.js"],
     ["app/i18n.js", "ui/ext-app/i18n.js"],
+    ["app/local-player.js", "ui/ext-app/local-player.js"],
     ["library.json", "data/library.json"]
 ];
 

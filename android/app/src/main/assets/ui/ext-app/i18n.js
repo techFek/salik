@@ -1,6 +1,7 @@
 
 const DICT = {
     "التحكم": "Filters", "المنصات": "Platforms", "الحساب": "Account",
+    "شغّل فيلمًا من جهازك مع الفلاتر": "Play a film from your device with filters",
     "نتفليكس": "Netflix", "أمازون": "Prime Video", "يانجو": "Yango Play", "ديزني+": "Disney+", "شاهد": "Shahid",
     "واتش ات": "Watch It", "تود": "Tod", "يوتيوب": "YouTube",
     "لا يوجد": "None", "لا يوجد مشاهد من هذا النوع حالياً": "No scenes of this type",

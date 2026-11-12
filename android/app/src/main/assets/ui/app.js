@@ -8,6 +8,7 @@ import {
 } from "./ext-app/services.js";
 import { LANG, t as extT, localizeLibrary } from "./ext-app/i18n.js";
 import { GUIDE } from "./guide.js";
+import { mountLocalPlayer } from "./ext-app/local-player.js";
 
 const native = window.SalikApp || {
   openUrl: (u) => window.open(u), openExternal: (u) => window.open(u),
@@ -144,6 +145,7 @@ const STR = {
   loadFail: ["تعذّر تحميل المكتبة", "Couldn't load the library"],
   loadFailHint: ["تأكد من الاتصال بالإنترنت ثم أعد المحاولة.", "Check your internet connection and try again."],
   retry: ["إعادة المحاولة", "Try again"],
+  localFile: ["ملف من جهازك", "File on device"],
   compTitle: ["سالك: ماذا تشاهد على {p}؟", "Salik: what are you watching on {p}?"],
   compTitleAny: ["سالك: ماذا تشاهد الآن؟", "Salik: what are you watching now?"],
   compHint: ["اختر العمل مرة واحدة، وسيتذكره سالك ويطبّق عليه إعداداتك تلقائيًا ثم يعيدك إلى التطبيق.", "Pick the title once; Salik remembers it, applies your settings and takes you back to the app."],
@@ -370,7 +372,7 @@ async function renderHome() {
 
   $view.innerHTML = `${heroHTML}
     <section class="section page"><div class="section-head"><h2>${T("platforms")}</h2><p>${T("platformsHint")}</p></div>
-      <div class="platform-row">${plats.map((p) => `<button class="plat" style="--pc:${PLATFORMS[p].color}" data-nav data-fid="p-${p}" data-platform-home="${p}"><bdi>${pMark(p)}</bdi></button>`).join("")}</div></section>
+      <div class="platform-row"><button class="plat" data-nav data-fid="p-local" data-local-player><bdi>📁 ${T("localFile")}</bdi></button>${plats.map((p) => `<button class="plat" style="--pc:${PLATFORMS[p].color}" data-nav data-fid="p-${p}" data-platform-home="${p}"><bdi>${pMark(p)}</bdi></button>`).join("")}</div></section>
     <section class="section page"><div class="section-head"><h2>${T("globalFilters")}</h2><p>${T("globalHint")}</p></div>
       <div class="switch-grid">${switches}</div></section>
     ${rowHTML("recent", T("recent"), recentItems(), T("holdHint"), true)}
@@ -600,6 +602,7 @@ function renderState(title, text, actions) {
 const current = () => S.stack[S.stack.length - 1];
 
 async function rerender(restoreFid) {
+  if (S.stopPlayer && current().name !== "player") { S.stopPlayer(); S.stopPlayer = null; }
   const fid = restoreFid ?? document.activeElement?.dataset?.fid;
   const scr = current();
   const railRoute = scr.name === "guide" ? "settings" : scr.name === "details" ? (S.stack.find((x) => x.name !== "details")?.name || "home") : scr.name;
@@ -612,6 +615,7 @@ async function rerender(restoreFid) {
   else if (scr.name === "settings") await renderSettings();
   else if (scr.name === "guide") renderGuide();
   else if (scr.name === "companion") renderCompanion();
+  else if (scr.name === "player") renderLocalPlayer();
   if (restoreFid === null) $view.scrollTo({ top: 0, behavior: "instant" });
   const target = (fid && $view.querySelector(`[data-fid="${CSS.escape(fid)}"]`)) || (scr.name === "companion" && $view.querySelector("#comp-list [data-nav]")) || $view.querySelector("[data-nav]");
   if (target && !$modalRoot.firstChild) focusEl(target, true);
@@ -638,6 +642,19 @@ window.salikResume = function () {
   if (current().name === "home" && !$modalRoot.firstChild) rerender();
 };
 const refreshApp = () => fetch("/data/app.json").then((r) => r.json()).then((a) => { S.app = a; }).catch(() => {});
+
+/* ---------- Local player: a file on this device, filtered like the platforms ---------- */
+
+async function renderLocalPlayer() {
+  if (S.stopPlayer) return; // already mounted (focus restore, resume…)
+  $view.innerHTML = `<div id="lp-root"></div>`;
+  const disabledStore = await getDisabledFiltersStore();
+  S.stopPlayer = mountLocalPlayer(document.getElementById("lp-root"), {
+    library: S.byKey, settings: S.settings, disabledStore, lang: EN ? "en" : "ar",
+    canPickFiles: S.app?.canPickFiles !== false,
+    onExit: () => window.salikBack()
+  });
+}
 
 /* ---------- Companion mode: which title is playing in another app ---------- */
 
@@ -800,6 +817,7 @@ document.addEventListener("click", async (e) => {
   }
   if (d.watch) { closeModal(); watch(d.watch, d.platform); return; }
   if (d.platformHome) { native.openUrl(platformHome(d.platformHome), d.platformHome); return; }
+  if (d.localPlayer !== undefined) { go({ name: "player" }); return; }
   if (d.companionPick) { companionPick(d.companionPick); return; }
   if (d.companionNone !== undefined) { companionPick(null); return; }
   if (d.companionToggle !== undefined) { const on = !S.app?.companionEnabled; native.setCompanionEnabled(on); S.app = { ...(S.app || {}), companionEnabled: on }; rerender(el.dataset.fid); return; }
@@ -1055,9 +1073,11 @@ $rail.addEventListener("click", (e) => { if (e.target.closest(".rail-item")) set
   if (S.app?.companionAsk && !S.error) window.salikCompanionAsk(S.app.companionAsk);
   fetch("/data/library-fresh.json").then((r) => r.json()).then((lib) => {
     if (lib.__error) return;
-    const before = JSON.stringify(Object.keys(S.byKey).length);
+    // redraw when anything visible changed (a title added, removed, renamed or re-timed), not only the count
+    const sig = () => S.items.map((i) => `${i.key}:${i.addedAt || 0}:${i.filters.length}`).sort().join("|");
+    const before = sig();
     prepare(lib);
     fetch("/data/app.json").then((r) => r.json()).then((a) => { S.app = a; }).catch(() => {});
-    if (S.error || JSON.stringify(Object.keys(S.byKey).length) !== before) { S.error = null; rerender(); }
+    if (S.error || sig() !== before) { S.error = null; rerender(); }
   }).catch(() => {});
 })();

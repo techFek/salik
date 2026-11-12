@@ -273,6 +273,8 @@ function PlatformsTab({ library, activePlatformFilter, onPlatformChange, searchQ
 
     return html`
         <div id="section-platforms" class="tab-content active">
+            <button onClick=${() => chrome.tabs.create({ url: chrome.runtime.getURL("player.html") })}
+                style=${{ width: "100%", margin: "0 0 10px", padding: "10px", border: "1px solid var(--primary)", borderRadius: "8px", background: "#fff", color: "var(--primary)", fontWeight: 700, cursor: "pointer" }}>📁 شغّل فيلمًا من جهازك مع الفلاتر</button>
             <div class="search-container">
                 <input type="text" id="searchBar" placeholder="🔍 ابحث عن فيلم أو مسلسل مدعوم..." value=${searchQuery}
                     onInput=${(e) => onSearchChange(e.target.value)} />

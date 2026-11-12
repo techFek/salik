@@ -30,6 +30,7 @@ class HomeActivity : Activity() {
 
     companion object {
         private const val TAG = "SalikHome"
+        private const val FILE_REQUEST = 41
         private const val ORIGIN = "https://appassets.androidplatform.net"
         const val UI_URL = "$ORIGIN/assets/ui/index.html"
     }
@@ -42,6 +43,19 @@ class HomeActivity : Activity() {
 
     /** Set when companion mode opened the catalog to ask which title is playing in another app. */
     @Volatile private var companionAsk: JSONObject? = null
+    private var fileCallback: android.webkit.ValueCallback<Array<Uri>>? = null
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != FILE_REQUEST) return
+        val uri = data?.data
+        fileCallback?.onReceiveValue(if (resultCode == RESULT_OK && uri != null) arrayOf(uri) else null)
+        fileCallback = null
+    }
+
+    private fun canPickFiles(): Boolean =
+        Intent(Intent.ACTION_GET_CONTENT).addCategory(Intent.CATEGORY_OPENABLE).setType("video/*").resolveActivity(packageManager) != null
 
     private fun readCompanionAsk(intent: Intent?) {
         val key = intent?.getStringExtra("companionKey") ?: return
@@ -77,7 +91,7 @@ class HomeActivity : Activity() {
             setBackgroundColor(Color.parseColor("#EEF4F2"))
             settings.javaScriptEnabled = true
             settings.domStorageEnabled = true
-            settings.mediaPlaybackRequiresUserGesture = true
+            settings.mediaPlaybackRequiresUserGesture = false
             isFocusable = true
             isFocusableInTouchMode = true
         }
@@ -92,6 +106,22 @@ class HomeActivity : Activity() {
             }
         }
         webView.webChromeClient = object : WebChromeClient() {
+            /** File inputs in the catalog (local player: video and subtitle files). */
+            override fun onShowFileChooser(view: WebView, callback: android.webkit.ValueCallback<Array<Uri>>, params: FileChooserParams): Boolean {
+                fileCallback?.onReceiveValue(null)
+                fileCallback = callback
+                val intent = Intent(Intent.ACTION_GET_CONTENT).addCategory(Intent.CATEGORY_OPENABLE)
+                    .setType(if (params.acceptTypes.any { it.startsWith("video") }) "video/*" else "*/*")
+                return try {
+                    startActivityForResult(Intent.createChooser(intent, null), FILE_REQUEST)
+                    true
+                } catch (e: Exception) {
+                    fileCallback = null
+                    android.widget.Toast.makeText(this@HomeActivity, Lang.t(this@HomeActivity, "لا يوجد منتقي ملفات على هذا الجهاز؛ ثبّت مدير ملفات", "No file picker on this device; install a file manager"), android.widget.Toast.LENGTH_LONG).show()
+                    false
+                }
+            }
+
             override fun onConsoleMessage(msg: ConsoleMessage): Boolean {
                 SalikLog.d(TAG, "JS: ${msg.message()} @${msg.lineNumber()}")
                 return true
@@ -136,6 +166,7 @@ class HomeActivity : Activity() {
         .put("companionAccess", companionAccess())
         .put("companionOverlay", CompanionEngine.canOverlay(this))
         .put("companionAsk", companionAsk ?: JSONObject.NULL)
+        .put("canPickFiles", canPickFiles())
 
     private fun companionAccess(): Boolean {
         val me = android.content.ComponentName(this, MediaListener::class.java)

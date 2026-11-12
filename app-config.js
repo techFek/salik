@@ -6,6 +6,6 @@ const SALIK_CONFIG = {
     DONATE_URL_EN: "",
     DONATE_URL_AR: "https://ipn.eg/S/a7mdfekry/instapay/3DmN57",
     INSTAPAY_HANDLE: "a7mdfekry@instapay",
-    LIBRARY_CACHE_MINUTES: 360
+    LIBRARY_CACHE_MINUTES: 30
 };
 if (typeof globalThis !== "undefined") globalThis.SALIK_CONFIG = SALIK_CONFIG;

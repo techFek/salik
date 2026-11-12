@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salik player</title>
+    <link rel="icon" href="images/icon32.png">
+    <style>
+        :root { color-scheme: light dark; }
+        body { margin: 0; font-family: "Tajawal", "Segoe UI", system-ui, sans-serif; background: #f4f7f6; color: #10231c; }
+        @media (prefers-color-scheme: dark) { body { background: #0f1512; color: #e6efe9; } }
+    </style>
+</head>
+<body>
+    <main id="root"></main>
+    <script src="app-config.js"></script>
+    <script src="shared/filter-core.js"></script>
+    <script src="subtitle-censor-core.js"></script>
+    <script type="module" src="app/player-page.js"></script>
+</body>
+</html>
