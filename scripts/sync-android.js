@@ -24,6 +24,13 @@ const FILES = [
 ];
 
 /*
+ * The app downloads the latest library from GitHub; its bundled copy is only a fallback and is refreshed
+ * whenever an APK is built (run this script first). So a newer root library.json is not an error in --check,
+ * which lets the title tool push library updates without touching android/.
+ */
+const SNAPSHOTS = new Set(["library.json"]);
+
+/*
  * Copies inside the extension itself. Chrome injects a file only once per page, so the MAIN world
  * gets the shared core under a second name.
  */
@@ -46,7 +53,9 @@ function main(argv) {
     const check = argv.includes("--check");
     const rows = compare();
     if (check) {
-        const bad = rows.filter((r) => !r.same);
+        const stale = rows.filter((r) => !r.same && SNAPSHOTS.has(r.src));
+        for (const r of stale) console.log("note: " + r.label + " is older than " + r.src + " (refreshed when the APK is built)");
+        const bad = rows.filter((r) => !r.same && !SNAPSHOTS.has(r.src));
         for (const r of bad) console.error("out of sync: " + r.src + " -> " + r.label);
         if (bad.length) { console.error("Run: node scripts/sync-android.js"); return 1; }
         console.log("copies are in sync (" + rows.length + " files)");
@@ -62,4 +71,4 @@ function main(argv) {
 }
 
 if (require.main === module) process.exit(main(process.argv.slice(2)));
-module.exports = { FILES, ROOT_COPIES, compare };
+module.exports = { FILES, ROOT_COPIES, SNAPSHOTS, compare };
