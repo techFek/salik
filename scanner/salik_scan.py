@@ -28,6 +28,8 @@ def main():
     s.add_argument("--lang", default=None, help="audio language, e.g. ar or en (default: detect)")
     s.add_argument("--no-speech", action="store_true", help="skip the audio (bad language)")
     s.add_argument("--word", action="append", default=[], help="extra word to count as bad language (repeatable)")
+    s.add_argument("--whisper-anyway", action="store_true", help="listen with Whisper even when YouTube captions exist")
+    s.add_argument("--cookies-from-browser", default=None, help="e.g. chrome, if YouTube asks to sign in")
     s.add_argument("--no-review", action="store_true", help="don't open the review page at the end")
     r = sub.add_parser("review", help="open the review page")
     r.add_argument("folder", nargs="?")
@@ -39,7 +41,8 @@ def main():
     from salikscan import scan as S
     if a.cmd == "scan":
         folder = S.run(a.source, every=a.every, threshold=a.threshold, whisper=a.whisper, language=a.lang,
-                       speech=not a.no_speech, extra_words=a.word)
+                       speech=not a.no_speech, extra_words=a.word, cookies_from=a.cookies_from_browser,
+                       force_whisper=a.whisper_anyway)
         if not a.no_review:
             from salikscan.review import serve
             serve(folder)

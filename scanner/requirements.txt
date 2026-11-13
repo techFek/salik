@@ -5,4 +5,5 @@ pillow>=10
 numpy>=1.26
 scikit-learn>=1.4
 joblib>=1.3
-faster-whisper>=1.1
+# optional: only for local files or videos without captions
+# faster-whisper>=1.1

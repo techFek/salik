@@ -17,8 +17,9 @@ def slug(text):
     return (s or "video")[:60]
 
 
-def fetch(source, out_dir: Path):
-    """Returns (video_path, info). `source` is a URL or a file path."""
+def fetch(source, out_dir: Path, cookies_from=None):
+    """Returns (video_path, info). `source` is a URL or a file path. For links, YouTube's own captions are saved
+    too (video.<lang>.json3): automatic captions carry the time of every word."""
     out_dir.mkdir(parents=True, exist_ok=True)
     if os.path.exists(source):
         p = Path(source)
@@ -30,11 +31,19 @@ def fetch(source, out_dir: Path):
         if shutil.which(rt):
             js = ["--js-runtimes", rt]
             break
-    cmd = ["yt-dlp", *js, "--no-playlist", "-f", "bv*[height<=480]+ba/b[height<=480]/bv*+ba/b",
+    auth = ["--cookies-from-browser", cookies_from] if cookies_from else []
+    cmd = ["yt-dlp", *js, *auth, "--no-playlist", "-f", "bv*[height<=480]+ba/b[height<=480]/bv*+ba/b",
            "--merge-output-format", "mp4", "-o", str(out_dir / "video.%(ext)s"), "--write-info-json", source]
     print("⬇  downloading…", flush=True)
     subprocess.run(cmd, check=True)
-    video = next(p for p in out_dir.iterdir() if p.name.startswith("video.") and p.suffix != ".json")
+    # captions: the automatic ones in the video's own language ("-orig") have word timings; fall back to any en/ar
+    for langs in (".*-orig", "en.*,ar.*"):
+        subprocess.run(["yt-dlp", *js, *auth, "--no-playlist", "--skip-download", "--write-auto-subs", "--write-subs",
+                        "--sub-langs", langs, "--sub-format", "json3", "-o", str(out_dir / "video.%(ext)s"), source],
+                       capture_output=True, text=True)
+        if list(out_dir.glob("video.*.json3")):
+            break
+    video = next(p for p in out_dir.iterdir() if p.name.startswith("video.") and p.suffix not in (".json", ".json3"))
     info_file = out_dir / "video.info.json"
     meta = json.loads(info_file.read_text(encoding="utf-8")) if info_file.exists() else {}
     info = {"title": meta.get("title") or video.stem, "source": source, "duration": meta.get("duration") or probe_duration(video),

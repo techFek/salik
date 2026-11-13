@@ -5,7 +5,7 @@ from pathlib import Path
 
 LISTS_FILE = Path(__file__).resolve().parents[2] / "subtitle-censor-core.js"
 LIST_TO_LABEL = {"profanity": "language", "insults": "language", "youtubeExtra": "language",
-                 "explicit": "speech_sexual", "substance": "speech_substance"}
+                 "explicit": "language", "substance": "speech_substance"}
 PROCLITICS = ["بال", "كال", "فال", "وال", "ال", "و", "ف", "ب", "ل", "ك"]
 SUFFIXES = ["ين", "ون", "ات", "ها", "هم", "كم", "نا", "ه", "ة", "ك", "ي", "s", "es", "ed", "ing", "in", "er", "ers"]
 
@@ -44,6 +44,49 @@ def match_word(token, single):
         if token.endswith(s) and len(token) - len(s) >= 3 and token[:-len(s)] in single:
             return single[token[:-len(s)]]
     return None
+
+
+def from_youtube_captions(json3_path):
+    """Words with times from YouTube's json3 captions. Automatic captions give each word's start
+    (tStartMs + tOffsetMs); a word ends where the next one starts, capped so pauses aren't counted."""
+    import json
+    d = json.loads(Path(json3_path).read_text(encoding="utf-8"))
+    raw = []
+    for ev in d.get("events", []):
+        segs = ev.get("segs")
+        if not segs or "tStartMs" not in ev:
+            continue
+        start = ev["tStartMs"] / 1000
+        line_end = start + ev.get("dDurationMs", 0) / 1000
+        line = "".join(s.get("utf8", "") for s in segs).replace("\n", " ").strip()
+        timed = any("tOffsetMs" in s for s in segs)
+        if not timed:  # manual captions: one time per line, words spread by length
+            words = line.split()
+            total = sum(len(w) for w in words) or 1
+            t = start
+            for w in words:
+                dur = (line_end - start) * len(w) / total
+                raw.append({"w": w, "start": t, "end": t + dur, "line": line, "exact": False})
+                t += dur
+            continue
+        for s in segs:
+            w = s.get("utf8", "").strip()
+            if w:
+                raw.append({"w": w, "start": start + s.get("tOffsetMs", 0) / 1000, "end": None, "line": line, "line_end": line_end, "exact": True})
+    raw.sort(key=lambda x: x["start"])
+    for i, w in enumerate(raw):
+        if w["end"] is None:
+            nxt = raw[i + 1]["start"] if i + 1 < len(raw) else w["start"] + 0.6
+            cap = w["start"] + max(0.25, min(0.9, 0.08 * len(w["w"]) + 0.15))
+            w["end"] = max(w["start"] + 0.15, min(nxt, cap, w.get("line_end") or nxt))
+        w["start"], w["end"] = round(w["start"], 2), round(w["end"], 2)
+        w.pop("line_end", None)
+    return raw
+
+
+def caption_language(json3_path):
+    m = re.search(r"\.([a-zA-Z-]+)\.json3$", str(json3_path))
+    return m.group(1) if m else ""
 
 
 def transcribe(wav, model_size="small", language=None):

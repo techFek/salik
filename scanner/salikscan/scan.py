@@ -14,16 +14,18 @@ ROOT = Path(__file__).resolve().parent.parent
 SCANS = ROOT / "scans"
 
 
-def run(source, every=1.0, threshold=0.35, whisper="small", language=None, speech=True, extra_words=()):
+def run(source, every=1.0, threshold=0.35, whisper="small", language=None, speech=True, extra_words=(), cookies_from=None, force_whisper=False):
     t0 = time.time()
     tmp = SCANS / f"_incoming-{int(t0)}"
-    video, info = media.fetch(source, tmp)
+    video, info = media.fetch(source, tmp, cookies_from=cookies_from)
+    caps = sorted(tmp.glob("video.*.json3"), key=lambda p: ("-orig" not in p.name, p.name)) if tmp.exists() else []
     folder = SCANS / f"{datetime.now():%Y-%m-%d_%H%M}-{media.slug(info['title'])}"
     folder.mkdir(parents=True, exist_ok=True)
     if video.parent == tmp:
         target = folder / ("video" + video.suffix)
         shutil.move(str(video), target)
         video = target
+        caps = [Path(shutil.move(str(c), folder / c.name)) for c in caps]
         shutil.rmtree(tmp, ignore_errors=True)
     else:
         shutil.rmtree(tmp, ignore_errors=True)
@@ -44,17 +46,29 @@ def run(source, every=1.0, threshold=0.35, whisper="small", language=None, speec
 
     if speech:
         from . import speech as sp
-        wav = folder / "audio.wav"
-        media.extract_audio(video, wav)
-        words, lang = sp.transcribe(wav, whisper, language)
-        info["language"] = lang
+        if caps and not force_whisper:
+            # YouTube's automatic captions already time every word: no need to listen to the audio
+            words = sp.from_youtube_captions(caps[0])
+            info["language"] = sp.caption_language(caps[0])
+            info["speech_source"] = "youtube-captions" + ("" if any(w["exact"] for w in words) else " (line timing)")
+            print(f"💬 using YouTube captions ({caps[0].name}): {len(words)} words", flush=True)
+        else:
+            try:
+                wav = folder / "audio.wav"
+                media.extract_audio(video, wav)
+                words, lang = sp.transcribe(wav, whisper, language)
+                info["language"], info["speech_source"] = lang, f"whisper-{whisper}"
+                wav.unlink(missing_ok=True)
+            except ImportError:
+                print("⚠  no captions and faster-whisper isn't installed: bad language skipped "
+                      "(pip install faster-whisper to listen to the audio).", flush=True)
+                words = []
         (folder / "transcript.json").write_text(json.dumps(words, ensure_ascii=False), encoding="utf-8")
         for h in sp.find_bad_words(words, sp.load_lists(extra_words)):
             i = int(np.clip(np.searchsorted(times, (h["start"] + h["end"]) / 2), 0, len(frames) - 1)) if len(frames) else 0
             h["image"] = f"frames/{frames[i][0].name}" if frames else ""
             h["frames"] = [i]
             scenes.append(h)
-        wav.unlink(missing_ok=True)
 
     scenes.sort(key=lambda s: (s["start"], s["category"]))
     for n, s in enumerate(scenes, 1):
