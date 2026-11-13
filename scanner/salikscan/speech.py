@@ -118,7 +118,8 @@ def find_bad_words(words, lists, pad=0.05):
     for i, t in enumerate(toks):
         if i in used or not t:
             continue
-        label = match_word(t, single)
+        # YouTube's automatic captions write swear words as "[ __ ]"
+        label = "language" if set(t) == {"_"} else match_word(t, single)
         if label:
             hits.append((i, i, label))
     out = []
