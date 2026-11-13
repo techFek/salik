@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Salik Scan</title>
+<style>
+  :root { --bg:#f3f6f5; --card:#fff; --ink:#13231d; --dim:#5f6f69; --line:#dfe6e3; --accent:#1f8a5c; --no:#c0392b; --focus:#2f7fd8; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1513; --card:#18211d; --ink:#e7efea; --dim:#9aaba4; --line:#2a3631; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:"Segoe UI", Tahoma, system-ui, sans-serif; }
+  header { position:sticky; top:0; z-index:5; background:var(--bg); border-bottom:1px solid var(--line); padding:12px 16px; }
+  h1 { margin:0 0 4px; font-size:1.25rem; }
+  .meta { color:var(--dim); font-size:.85rem; }
+  .stats { display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 8px; }
+  .stat { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:6px 10px; font-size:.85rem; cursor:pointer; }
+  .stat.on { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent) inset; }
+  .stat b { font-size:1.05rem; }
+  .bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+  button, select, input { font:inherit; }
+  .btn { border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:8px; padding:6px 12px; cursor:pointer; }
+  .btn.primary { background:var(--accent); border-color:var(--accent); color:#fff; }
+  main { padding:16px; display:grid; grid-template-columns:repeat(auto-fill, minmax(300px, 1fr)); gap:14px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; overflow:hidden; display:flex; flex-direction:column; outline:none; }
+  .card:focus { box-shadow:0 0 0 3px var(--focus); }
+  .card.yes { border-color:var(--accent); } .card.no { opacity:.55; }
+  .card img.main { width:100%; aspect-ratio:16/9; object-fit:cover; background:#000; display:block; cursor:zoom-in; }
+  .strip { display:flex; gap:2px; background:#000; }
+  .strip img { flex:1; min-width:0; height:44px; object-fit:cover; cursor:zoom-in; }
+  .body { padding:10px 12px; display:flex; flex-direction:column; gap:8px; }
+  .row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .tag { font-size:.8rem; padding:2px 8px; border-radius:999px; background:rgba(127,127,127,.15); }
+  .time { font-family:Consolas, monospace; color:var(--dim); }
+  .word { font-weight:700; } .line { color:var(--dim); font-size:.85rem; }
+  .actions { display:flex; gap:6px; }
+  .actions .yes { flex:1; border-color:var(--accent); color:var(--accent); font-weight:700; }
+  .actions .no { flex:1; border-color:var(--no); color:var(--no); font-weight:700; }
+  .card.yes .actions .yes { background:var(--accent); color:#fff; } .card.no .actions .no { background:var(--no); color:#fff; }
+  .note { width:100%; border:1px solid var(--line); background:transparent; color:var(--ink); border-radius:8px; padding:6px 8px; }
+  #modal { position:fixed; inset:0; background:rgba(0,0,0,.85); display:none; align-items:center; justify-content:center; z-index:20; }
+  #modal.on { display:flex; } #modal img, #modal video { max-width:94vw; max-height:88vh; }
+  .empty { grid-column:1/-1; text-align:center; color:var(--dim); padding:40px; }
+  .help { color:var(--dim); font-size:.8rem; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title">…</h1>
+  <div class="meta" id="meta"></div>
+  <div class="stats" id="stats"></div>
+  <div class="bar">
+    <select id="show" class="btn">
+      <option value="todo">لم تُراجع بعد</option>
+      <option value="all">الكل</option>
+      <option value="yes">المؤكدة ✓</option>
+      <option value="no">المرفوضة ✗</option>
+    </select>
+    <select id="sort" class="btn"><option value="time">بالترتيب الزمني</option><option value="score">الأقوى أولًا</option></select>
+    <button class="btn primary" id="export">تصدير فلاتر سالك (المؤكدة)</button>
+    <span class="help">اختصارات: Y = صح، N = غلط، ← → للتنقل، Space = تشغيل المقطع</span>
+  </div>
+</header>
+<main id="grid"></main>
+<div id="modal"></div>
+<script>
+let D = null, filterCat = "", show = "todo", sortBy = "time";
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const clock = (t) => { t = Math.max(0, Math.floor(t)); const h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = String(t % 60).padStart(2, "0"); return h ? `${h}:${String(m).padStart(2, "0")}:${s}` : `${m}:${s}`; };
+
+async function load() {
+  D = await (await fetch("/api/scan")).json();
+  $("#title").textContent = D.info.title || "Salik Scan";
+  const src = /^https?:/.test(D.info.source || "") ? `<a href="${esc(D.info.source)}" target="_blank">${esc(D.info.source)}</a>` : esc(D.info.source || "");
+  $("#meta").innerHTML = `${src} · المدة ${clock(D.info.duration || 0)}${D.info.language ? " · اللغة " + esc(D.info.language) : ""} · وقت التحليل ${clock(D.info.seconds || 0)}`;
+  render();
+}
+
+function verdictOf(s) { return (D.labels[s.id] || {}).verdict || ""; }
+function catOf(s) { return (D.labels[s.id] || {}).category || s.category; }
+
+function renderStats() {
+  const by = {};
+  for (const s of D.scenes) {
+    const c = catOf(s), v = verdictOf(s);
+    by[c] ||= { all: 0, yes: 0, no: 0 };
+    by[c].all++; if (v) by[c][v]++;
+  }
+  const reviewed = D.scenes.filter(verdictOf).length;
+  $("#stats").innerHTML = `<div class="stat ${filterCat ? "" : "on"}" data-cat="">الكل <b>${D.scenes.length}</b> · رُوجع ${reviewed}</div>` +
+    Object.entries(D.names).filter(([k]) => by[k]).map(([k, n]) =>
+      `<div class="stat ${filterCat === k ? "on" : ""}" data-cat="${k}">${esc(n)} <b>${by[k].all}</b> · ✓ ${by[k].yes} · ✗ ${by[k].no}</div>`).join("");
+}
+
+function render() {
+  renderStats();
+  let list = D.scenes.filter((s) => (!filterCat || catOf(s) === filterCat) &&
+    (show === "all" || (show === "todo" ? !verdictOf(s) : verdictOf(s) === show)));
+  if (sortBy === "score") list = [...list].sort((a, b) => (b.peak || 0) - (a.peak || 0));
+  const opts = (sel) => Object.entries(D.names).map(([k, n]) => `<option value="${k}" ${k === sel ? "selected" : ""}>${esc(n)}</option>`).join("");
+  $("#grid").innerHTML = list.length ? list.map((s) => {
+    const v = verdictOf(s), lab = D.labels[s.id] || {};
+    return `<div class="card ${v}" tabindex="0" data-id="${s.id}">
+      ${s.image ? `<img class="main" loading="lazy" src="${esc(s.image)}" alt="">` : ""}
+      ${(s.strip || []).length > 1 ? `<div class="strip">${s.strip.map((p) => `<img loading="lazy" src="${esc(p)}" alt="">`).join("")}</div>` : ""}
+      <div class="body">
+        <div class="row"><span class="time" dir="ltr">${clock(s.start)} – ${clock(s.end)}</span>
+          ${s.source === "visual" ? `<span class="tag">ثقة ${Math.round((s.peak || 0) * 100)}%</span>` : `<span class="tag">من الصوت</span>`}
+          <button class="btn" data-play="${s.id}">▶ تشغيل</button></div>
+        ${s.word ? `<div><span class="word">${esc(s.word)}</span><div class="line">${esc(s.line || "")}</div></div>` : ""}
+        <select class="btn" data-cat-of="${s.id}">${opts(catOf(s))}</select>
+        <div class="actions"><button class="btn yes" data-v="yes">✓ صح</button><button class="btn no" data-v="no">✗ غلط</button></div>
+        <input class="note" data-note="${s.id}" placeholder="وصف المشهد (اختياري، يظهر في فلاتر سالك)" value="${esc(lab.note || "")}">
+      </div></div>`;
+  }).join("") : `<div class="empty">لا يوجد شيء هنا.</div>`;
+}
+
+async function save(id, patch) {
+  const cur = { ...(D.labels[id] || {}), ...patch };
+  for (const k of Object.keys(cur)) if (!cur[k]) delete cur[k];
+  if (Object.keys(cur).length) D.labels[id] = cur; else delete D.labels[id];
+  await fetch("/api/label", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, ...cur }) });
+}
+
+function play(s) {
+  const m = $("#modal");
+  m.innerHTML = `<video controls autoplay src="/video#t=${Math.max(0, s.start - 1)},${s.end + 1}"></video>`;
+  m.classList.add("on");
+}
+function zoom(src) { const m = $("#modal"); m.innerHTML = `<img src="${esc(src)}">`; m.classList.add("on"); }
+
+document.addEventListener("click", async (e) => {
+  const t = e.target;
+  if (t.closest("#modal")) { $("#modal").classList.remove("on"); $("#modal").innerHTML = ""; return; }
+  const stat = t.closest("[data-cat]");
+  if (stat && stat.classList.contains("stat")) { filterCat = stat.dataset.cat; render(); return; }
+  if (t.matches("img")) { zoom(t.getAttribute("src")); return; }
+  const card = t.closest(".card");
+  if (t.dataset.play) { play(D.scenes.find((s) => s.id == t.dataset.play)); return; }
+  if (card && t.dataset.v) {
+    const id = card.dataset.id, cur = verdictOf({ id });
+    await save(id, { verdict: cur === t.dataset.v ? "" : t.dataset.v });
+    const next = card.nextElementSibling;
+    if (show === "todo") { render(); const n = $(".card"); n && n.focus(); } else { card.className = `card ${verdictOf({ id })}`; renderStats(); next && next.focus(); }
+  }
+});
+document.addEventListener("change", async (e) => {
+  const t = e.target;
+  if (t.dataset.catOf) { const s = D.scenes.find((x) => x.id == t.dataset.catOf); await save(s.id, { category: t.value === s.category ? "" : t.value }); renderStats(); }
+  if (t.dataset.note) await save(t.dataset.note, { note: t.value.trim() });
+  if (t.id === "show") { show = t.value; render(); }
+  if (t.id === "sort") { sortBy = t.value; render(); }
+});
+document.addEventListener("keydown", (e) => {
+  if (e.target.matches("input, select")) return;
+  if (e.key === "Escape") { $("#modal").classList.remove("on"); $("#modal").innerHTML = ""; return; }
+  const card = document.activeElement.closest?.(".card") || $(".card");
+  if (!card) return;
+  const k = e.key.toLowerCase();
+  if (k === "y" || k === "n") { card.querySelector(k === "y" ? "[data-v=yes]" : "[data-v=no]").click(); e.preventDefault(); }
+  else if (e.key === " ") { play(D.scenes.find((s) => s.id == card.dataset.id)); e.preventDefault(); }
+  else if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+    const sib = (e.key === "ArrowLeft") ? card.nextElementSibling : card.previousElementSibling; // RTL
+    (sib || card).focus(); e.preventDefault();
+  }
+});
+$("#export").addEventListener("click", async () => {
+  const f = await (await fetch("/api/filters")).json();
+  if (!f.length) { alert("لا توجد مشاهد مؤكدة بعد."); return; }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(f, null, 2)], { type: "application/json" }));
+  a.download = (D.info.title || "filters") + ".filters.json"; a.click();
+});
+load();
+</script>
+</body>
+</html>
