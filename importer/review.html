@@ -297,6 +297,12 @@ function currentUnified() {
 
 function buildItem() {
   const u = currentUnified();
+  if (!u.segments.length) {
+    throw new Error($("#onlyApproved").checked
+      ? "مفيش ولا مشهد متوافق عليه: دوس ✓ على المشاهد اللي راجعتها، أو شيل العلامة من «انشر المشاهد الموافَق عليها فقط»."
+      : "مفيش مشاهد (كلها محذوفة).");
+  }
+  if (mode === "import" && !baseItem && !$("#title").value.trim()) throw new Error("اكتب اسم العمل في خانة «العنوان» (ده عمل جديد على المكتبة).");
   const errors = validateUnified(u);
   if (errors.length) throw new Error(errors.join("\n"));
   if (mode === "item") {

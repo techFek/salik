@@ -196,8 +196,6 @@ export function parseVideoSkip(text, meta = {}) {
             const t = parseTime(lines[0]);
             if (!isNaN(t) && !u.reference) {
                 u.reference = { time: round2(t), desc: (lines.slice(1).find((l) => !/^data:image/.test(l)) || "VideoSkip screenshot").slice(0, 200) };
-                const img = lines.find((l) => /^data:image\/(png|jpe?g|webp);base64,/.test(l));
-                if (img) u.reference.image = img;   // the screenshot VideoSkip took, shown on the review page (not stored in the library)
             }
             continue;
         }
@@ -223,6 +221,9 @@ export function parseVideoSkip(text, meta = {}) {
         if (blur) seg.blurBox = blur[1].trim().split(/[\s,]+/).map(Number);
         u.segments.push(seg);
     }
+    // VideoSkip keeps the screenshot as a data URL in its own block near the end of the file
+    const shot = String(text).match(/^data:image\/(?:png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$/m);
+    if (shot && u.reference) u.reference.image = shot[0];   // shown on the review page, not stored in the library
     u.attribution = u.attribution || {
         source: "VideoSkip exchange", url: meta.sourceUrl || "https://videoskip.herokuapp.com/exchange",
         license: meta.license || "unknown — check the source before publishing", importedAt: new Date().toISOString().slice(0, 10)
