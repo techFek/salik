@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Salik importer</title>
+<style>
+  :root { --bg:#f3f6f5; --card:#fff; --ink:#13231d; --dim:#5f6f69; --line:#dfe6e3; --accent:#1f8a5c; --no:#c0392b; --warn:#b7791f; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1513; --card:#18211d; --ink:#e7efea; --dim:#9aaba4; --line:#2a3631; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:"Segoe UI", Tahoma, system-ui, sans-serif; }
+  header { padding:14px 18px; border-bottom:1px solid var(--line); }
+  h1 { margin:0; font-size:1.25rem; } h2 { font-size:1rem; margin:0 0 8px; }
+  .wrap { display:grid; grid-template-columns:minmax(320px, 520px) 1fr; gap:16px; padding:16px; }
+  @media (max-width:1000px) { .wrap { grid-template-columns:1fr; } }
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px; margin-bottom:12px; }
+  label { display:block; font-size:.8rem; color:var(--dim); margin:6px 0 2px; }
+  input, select, button, textarea { font:inherit; }
+  input[type=text], input[type=number], input[type=password], select { width:100%; padding:6px 8px; border:1px solid var(--line); border-radius:8px; background:transparent; color:var(--ink); }
+  .row { display:flex; gap:8px; align-items:end; flex-wrap:wrap; } .row > * { flex:1; min-width:110px; }
+  .btn { border:1px solid var(--line); background:var(--card); color:var(--ink); border-radius:8px; padding:6px 12px; cursor:pointer; }
+  .btn.primary { background:var(--accent); border-color:var(--accent); color:#fff; } .btn.danger { color:var(--no); border-color:var(--no); }
+  .btn:disabled { opacity:.5; cursor:default; }
+  video { width:100%; background:#000; border-radius:10px; max-height:46vh; }
+  .hint { font-size:.8rem; color:var(--dim); line-height:1.6; }
+  .warn { color:var(--warn); }
+  table { width:100%; border-collapse:collapse; font-size:.85rem; }
+  th, td { border-bottom:1px solid var(--line); padding:5px 4px; text-align:start; vertical-align:middle; }
+  td input, td select { padding:3px 5px; }
+  td.t input { width:84px; direction:ltr; font-family:Consolas, monospace; }
+  tr.ok { background:rgba(31,138,92,.08); } tr.del { opacity:.35; text-decoration:line-through; } tr.cur { outline:2px solid #2f7fd8; }
+  .badge { font-size:.75rem; padding:1px 7px; border-radius:999px; background:rgba(127,127,127,.15); }
+  #log { white-space:pre-wrap; font-family:Consolas, monospace; font-size:.8rem; max-height:180px; overflow:auto; }
+</style>
+</head>
+<body>
+<header><h1>Salik importer: مراجعة التوقيتات المستوردة</h1>
+  <div class="hint">استورد ملف MovieContentFilter (.mcf) أو VideoSkip (.skp) أو راجع المشاهد غير المراجعة لعمل موجود، وشغّل الفيديو عند كل مشهد، ثم انشر على GitHub.</div></header>
+<div class="wrap">
+  <div>
+    <div class="panel"><h2>1. المصدر</h2>
+      <label>ملف توقيتات (.mcf / .skp / JSON موحّد)</label><input type="file" id="srcFile" accept=".mcf,.skp,.txt,.vtt,.json">
+      <div class="row">
+        <div><label>IMDb</label><input type="text" id="imdb" placeholder="tt1234567" dir="ltr"></div>
+        <div><label>موسم</label><input type="number" id="season" min="1"></div>
+        <div><label>حلقة</label><input type="number" id="episode" min="1"></div>
+      </div>
+      <div class="row">
+        <div><label>رخصة الملف (كما يذكرها المصدر)</label><input type="text" id="license" placeholder="مثلاً CC BY-SA 4.0"></div>
+        <div><label>رابط الملف</label><input type="text" id="sourceUrl" dir="ltr"></div>
+      </div>
+      <label>أو راجع عملًا موجودًا في المكتبة (المفتاح)</label>
+      <div class="row"><input type="text" id="libKey" dir="ltr" placeholder="backrooms"><button class="btn" id="loadItem">تحميل غير المراجَع</button></div>
+      <div class="hint" id="srcInfo"></div>
+    </div>
+
+    <div class="panel"><h2>2. الفيديو والمزامنة</h2>
+      <label>ملف الفيديو (نفس النسخة التي ستراجع عليها)</label><input type="file" id="videoFile" accept="video/*,.mkv">
+      <div class="row">
+        <div><label>runtimeSec (مدة نسخة التوقيتات)</label><input type="number" step="0.1" id="runtime"></div>
+        <div><button class="btn" id="useDuration">= مدة هذا الفيديو</button></div>
+      </div>
+      <div class="row">
+        <div><label>platformVersion</label><select id="platformVersion"><option>unknown</option><option>stremio</option><option>netflix</option><option>shahid</option><option>osnplus</option><option>disney</option><option>amazon</option><option>appletv</option></select></div>
+        <div><label>إزاحة كل التوقيتات (ث)</label><input type="number" step="0.1" id="shift" value="0"></div>
+      </div>
+      <div class="hint" id="refInfo"></div>
+      <div class="row"><button class="btn" id="syncHere">اللقطة المرجعية الآن ← احسب الإزاحة</button><button class="btn" id="applyShift">طبّق الإزاحة</button></div>
+    </div>
+
+    <div class="panel"><h2>3. النشر على GitHub</h2>
+      <div class="row">
+        <div><label>المستودع</label><input type="text" id="repo" value="techFek/salik" dir="ltr"></div>
+        <div><label>الفرع</label><input type="text" id="branch" value="main" dir="ltr"></div>
+      </div>
+      <div class="row">
+        <div><label>مفتاح العمل في المكتبة</label><input type="text" id="targetKey" dir="ltr"></div>
+        <div><label>العنوان (لعمل جديد)</label><input type="text" id="title"></div>
+      </div>
+      <label>GitHub token (fine-grained: هذا المستودع فقط، Contents: Read and write)</label>
+      <input type="password" id="token" dir="ltr" autocomplete="off">
+      <div class="hint">يُحفظ في هذه الجلسة فقط (sessionStorage) ويُرسل إلى api.github.com وحده.</div>
+      <label><input type="checkbox" id="onlyApproved" checked> انشر المشاهد الموافَق عليها فقط (الباقي يبقى غير مراجع لا يُنشر)</label>
+      <div class="row"><button class="btn primary" id="publish">نشر على GitHub</button><button class="btn" id="download">تنزيل JSON</button></div>
+      <div id="log"></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="panel"><video id="video" controls></video>
+      <div class="row" style="margin-top:6px">
+        <button class="btn" id="prev">⟨ السابق</button><button class="btn" id="next">التالي ⟩</button>
+        <button class="btn" id="setStart">البداية = الآن</button><button class="btn" id="setEnd">النهاية = الآن</button>
+      </div>
+      <div class="hint">اختصارات: A موافقة، D حذف، N التالي، P السابق، Space تشغيل المشهد.</div>
+    </div>
+    <div class="panel"><h2 id="count">المشاهد</h2>
+      <table><thead><tr><th></th><th>من</th><th>إلى</th><th>التصنيف</th><th>الشدة</th><th>الإجراء</th><th>الوصف</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+    </div>
+  </div>
+</div>
+<script type="module">
+import { ADAPTERS, CATEGORIES, SEVERITIES, ACTIONS, detectFormat, findKeyByImdb, mergeIntoItem, makeUnified, validateUnified } from "./importer.js";
+
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const clock = (t) => { const s = Math.max(0, t); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = (s % 60).toFixed(2).padStart(5, "0"); return `${h}:${String(m).padStart(2, "0")}:${x}`; };
+const parseClock = (v) => { const p = String(v).trim().split(":").map(Number); return p.some(isNaN) ? NaN : p.reduce((a, b) => a * 60 + b, 0); };
+const log = (m) => { $("#log").textContent += m + "\n"; $("#log").scrollTop = 1e9; };
+
+let U = null;            // unified import being reviewed
+let mode = "import";     // "import" (new file) | "item" (unverified filters of an existing title)
+let baseItem = null;     // existing library item (mode item, or the target of an import)
+let cur = -1;
+let library = null;
+
+try { $("#token").value = sessionStorage.getItem("salikGhToken") || ""; } catch (e) {}
+$("#token").addEventListener("change", () => { try { sessionStorage.setItem("salikGhToken", $("#token").value.trim()); } catch (e) {} });
+
+async function loadLibrary() {
+  if (library) return library;
+  try { library = await (await fetch("../library.json", { cache: "no-store" })).json(); } catch (e) { library = {}; }
+  return library;
+}
+
+/* ---------- sources ---------- */
+$("#srcFile").addEventListener("change", async (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  const text = await f.text();
+  let u;
+  if (/\.json$/i.test(f.name)) u = JSON.parse(text);
+  else {
+    const fmt = detectFormat(text, f.name);
+    u = ADAPTERS[fmt].parse(text, { imdb: $("#imdb").value, season: $("#season").value, episode: $("#episode").value,
+      license: $("#license").value || undefined, sourceUrl: $("#sourceUrl").value || undefined });
+  }
+  mode = "import"; baseItem = null;
+  setUnified(u);
+  const lib = await loadLibrary();
+  const key = U.imdb && findKeyByImdb(lib, U.imdb, U.season, U.episode);
+  $("#targetKey").value = key || "";
+  if (key) baseItem = lib[key];
+  $("#srcInfo").innerHTML = `${esc(f.name)}: ${U.segments.length} مشهد من ${esc(U.attribution?.source || U.source)}` +
+    (key ? ` · موجود في المكتبة باسم <b dir="ltr">${esc(key)}</b>` : U.imdb ? " · عمل جديد على المكتبة" : "") +
+    ((U.warnings || []).length ? `<br><span class="warn">${U.warnings.map(esc).join("<br>")}</span>` : "") +
+    (/unknown/.test(U.attribution?.license || "") ? `<br><span class="warn">رخصة الملف غير معروفة: تأكد منها قبل النشر.</span>` : "");
+});
+
+$("#loadItem").addEventListener("click", async () => {
+  const key = $("#libKey").value.trim(); if (!key) return;
+  let item;
+  try { item = await (await fetch(`../library/${encodeURIComponent(key)}.json`, { cache: "no-store" })).json(); }
+  catch (e) { alert("لا يوجد library/" + key + ".json"); return; }
+  mode = "item"; baseItem = item;
+  const u = makeUnified({ imdb: item.imdb || item.platforms?.stremio?.id, source: "manual", runtimeSec: item.sync?.runtimeSec,
+    platformVersion: item.sync?.platformVersion, reference: item.sync?.reference });
+  u.title = item.title;
+  const rev = { nudity: "nudity", violence: "violence", language: "profanity", "substance abuse": "drugs" };
+  u.segments = (item.filters || []).filter((f) => f.verified === false).map((f) => ({
+    id: f.id, start: f.start, end: f.end, category: rev[f.category] || (/sex/i.test(f.category) ? "sex" : "other"),
+    severity: f.severity || "medium", action: f.action_type === "partial_blur" ? "blur" : f.action_type, verified: false, note: f.original_description || "" }));
+  setUnified(u);
+  $("#targetKey").value = key; $("#title").value = item.title || "";
+  $("#srcInfo").textContent = `${key}: ${u.segments.length} مشهد غير مراجع`;
+});
+
+function setUnified(u) {
+  U = u; cur = -1;
+  for (const s of U.segments) s._state = s.verified ? "ok" : "";
+  $("#imdb").value = U.imdb || $("#imdb").value;
+  if (U.runtimeSec) $("#runtime").value = U.runtimeSec;
+  if (U.platformVersion) $("#platformVersion").value = U.platformVersion;
+  if (U.title && !$("#title").value) $("#title").value = U.title;
+  showRef(); render();
+}
+
+function showRef() {
+  $("#refInfo").innerHTML = U?.reference ? `اللقطة المرجعية: <b>${esc(U.reference.desc)}</b> عند <span dir="ltr">${clock(U.reference.time)}</span> في نسخة الملف. شغّل فيديوك عليها واضغط الزر.` : "لا توجد لقطة مرجعية في الملف: استخدم أول مشهد بدلًا منها.";
+}
+
+/* ---------- table ---------- */
+const opts = (list, v) => list.map((x) => `<option ${x === v ? "selected" : ""}>${x}</option>`).join("");
+function render() {
+  if (!U) return;
+  const done = U.segments.filter((s) => s._state).length;
+  $("#count").textContent = `المشاهد: ${U.segments.length} · رُوجع ${done}`;
+  $("#rows").innerHTML = U.segments.map((s, i) => `<tr data-i="${i}" class="${s._state === "ok" ? "ok" : s._state === "del" ? "del" : ""} ${i === cur ? "cur" : ""}">
+    <td><button class="btn" data-play="${i}">▶</button></td>
+    <td class="t"><input data-f="start" value="${clock(s.start)}"></td><td class="t"><input data-f="end" value="${clock(s.end)}"></td>
+    <td><select data-f="category">${opts(CATEGORIES, s.category)}</select></td>
+    <td><select data-f="severity">${opts(SEVERITIES, s.severity)}</select></td>
+    <td><select data-f="action">${opts(ACTIONS, s.action)}</select></td>
+    <td><input type="text" data-f="note" value="${esc(s.note || "")}"></td>
+    <td style="white-space:nowrap"><button class="btn" data-ok="${i}">✓</button> <button class="btn danger" data-del="${i}">✗</button></td></tr>`).join("");
+}
+$("#rows").addEventListener("change", (e) => {
+  const tr = e.target.closest("tr"); if (!tr) return;
+  const s = U.segments[+tr.dataset.i], f = e.target.dataset.f;
+  if (f === "start" || f === "end") { const v = parseClock(e.target.value); if (!isNaN(v)) s[f] = Math.round(v * 100) / 100; }
+  else s[f] = e.target.value;
+  render();
+});
+$("#rows").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b) return;
+  if (b.dataset.play) play(+b.dataset.play);
+  if (b.dataset.ok) mark(+b.dataset.ok, "ok");
+  if (b.dataset.del) mark(+b.dataset.del, "del");
+});
+function mark(i, st) { const s = U.segments[i]; s._state = s._state === st ? "" : st; cur = i; render(); }
+
+/* ---------- video ---------- */
+const v = $("#video");
+let stopAt = null;
+$("#videoFile").addEventListener("change", (e) => { const f = e.target.files[0]; if (f) v.src = URL.createObjectURL(f); });
+v.addEventListener("loadedmetadata", () => { if (!$("#runtime").value) $("#runtime").value = v.duration.toFixed(1); });
+$("#useDuration").addEventListener("click", () => { if (v.duration) $("#runtime").value = v.duration.toFixed(1); });
+v.addEventListener("timeupdate", () => { if (stopAt !== null && v.currentTime >= stopAt) { v.pause(); stopAt = null; } });
+function play(i) {
+  if (!U || !U.segments[i]) return;
+  cur = i; render();
+  const s = U.segments[i], shift = Number($("#shift").value) || 0;
+  if (!v.src) { alert("اختر ملف الفيديو أولًا"); return; }
+  v.currentTime = Math.max(0, s.start + shift - 2); stopAt = s.end + shift + 1; v.play();
+  document.querySelector(`tr[data-i="${i}"]`)?.scrollIntoView({ block: "nearest" });
+}
+$("#prev").addEventListener("click", () => play(Math.max(0, cur - 1)));
+$("#next").addEventListener("click", () => play(Math.min(U.segments.length - 1, cur + 1)));
+$("#setStart").addEventListener("click", () => { if (cur >= 0) { U.segments[cur].start = Math.round((v.currentTime - (Number($("#shift").value) || 0)) * 100) / 100; render(); } });
+$("#setEnd").addEventListener("click", () => { if (cur >= 0) { U.segments[cur].end = Math.round((v.currentTime - (Number($("#shift").value) || 0)) * 100) / 100; render(); } });
+$("#syncHere").addEventListener("click", () => {
+  const ref = U?.reference || (U?.segments[0] && { time: U.segments[0].start });
+  if (!ref || !v.src) return;
+  $("#shift").value = (v.currentTime - ref.time).toFixed(2);
+});
+$("#applyShift").addEventListener("click", () => {
+  const d = Number($("#shift").value) || 0; if (!U || !d) return;
+  for (const s of U.segments) { s.start = Math.max(0, Math.round((s.start + d) * 100) / 100); s.end = Math.max(0, Math.round((s.end + d) * 100) / 100); }
+  if (U.reference) U.reference.time = Math.round((U.reference.time + d) * 100) / 100;
+  $("#shift").value = 0; showRef(); render();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.target.matches("input, select, textarea") || !U) return;
+  const k = e.key.toLowerCase();
+  if (k === "a" && cur >= 0) mark(cur, "ok");
+  else if (k === "d" && cur >= 0) mark(cur, "del");
+  else if (k === "n") play(Math.min(U.segments.length - 1, cur + 1));
+  else if (k === "p") play(Math.max(0, cur - 1));
+  else if (k === " " && cur >= 0) { e.preventDefault(); play(cur); }
+});
+
+/* ---------- build the item ---------- */
+function currentUnified() {
+  const u = JSON.parse(JSON.stringify(U));
+  u.imdb = $("#imdb").value.trim() || u.imdb || null;
+  u.runtimeSec = Number($("#runtime").value) || null;
+  u.platformVersion = $("#platformVersion").value;
+  const only = $("#onlyApproved").checked;
+  u.segments = U.segments.filter((s) => s._state !== "del" && (!only || s._state === "ok"))
+    .map(({ _state, ...s }) => ({ ...s, verified: _state === "ok" }));
+  return u;
+}
+
+function buildItem() {
+  const u = currentUnified();
+  const errors = validateUnified(u);
+  if (errors.length) throw new Error(errors.join("\n"));
+  if (mode === "item") {
+    // replace this title's unverified filters with what was kept (approved ones become reviewed)
+    const item = JSON.parse(JSON.stringify(baseItem));
+    const reviewedIds = new Set(U.segments.map((s) => s.id));
+    item.filters = item.filters.filter((f) => !reviewedIds.has(f.id));
+    const kept = U.segments.filter((s) => s._state !== "del" && (!$("#onlyApproved").checked || s._state === "ok"));
+    const LIB = { sex: "nudity", nudity: "nudity", violence: "violence", gore: "violence", profanity: "language", drugs: "substance abuse" };
+    for (const s of kept) {
+      const f = { id: s.id, start: s.start, end: s.end, category: LIB[s.category] || "violence", original_description: s.note || s.category, action_type: s.action, severity: s.severity };
+      if (s._state !== "ok") f.verified = false;
+      item.filters.push(f);
+    }
+    item.filters.sort((a, b) => a.start - b.start);
+    if (u.runtimeSec) item.sync = { ...(item.sync || {}), runtimeSec: u.runtimeSec, platformVersion: u.platformVersion };
+    return { item, added: kept.length };
+  }
+  const { item, added, skipped } = mergeIntoItem(baseItem || { addedAt: Date.now() }, u, { title: $("#title").value.trim() });
+  for (const f of item.filters) if (f.verified === true) delete f.verified;   // reviewed = like the rest of the library
+  log(`+${added} مشهد${skipped ? `، ${skipped} موجود بالفعل` : ""}`);
+  return { item, added };
+}
+
+$("#download").addEventListener("click", () => {
+  try {
+    const { item } = buildItem();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(item, null, 2) + "\n"], { type: "application/json" }));
+    a.download = ($("#targetKey").value.trim() || "title") + ".json"; a.click();
+  } catch (e) { alert(e.message); }
+});
+
+/* ---------- GitHub: one commit with library/<key>.json and library.json ---------- */
+async function gh(path, opts = {}) {
+  const r = await fetch("https://api.github.com" + path, { ...opts, headers: { Authorization: "Bearer " + $("#token").value.trim(),
+    Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", ...(opts.body ? { "Content-Type": "application/json" } : {}) } });
+  if (!r.ok) throw new Error(`${opts.method || "GET"} ${path}: ${r.status} ${(await r.text()).slice(0, 200)}`);
+  return r.json();
+}
+const b64 = (s) => {
+  const bytes = new TextEncoder().encode(s);
+  let bin = "";
+  for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+};
+const unb64 = (s) => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/\n/g, "")), (c) => c.charCodeAt(0)));
+
+$("#publish").addEventListener("click", async () => {
+  const key = $("#targetKey").value.trim(), repo = $("#repo").value.trim(), branch = $("#branch").value.trim();
+  if (!U || !key || !$("#token").value.trim()) { alert("لازم: ملف، مفتاح العمل، والـ token"); return; }
+  if (!/^[\w؀-ۿ .-]+$/.test(key)) { alert("مفتاح غير صالح"); return; }
+  $("#publish").disabled = true;
+  try {
+    const { item } = buildItem();
+    log("قراءة الفرع…");
+    const ref = await gh(`/repos/${repo}/git/ref/heads/${branch}`);
+    const head = await gh(`/repos/${repo}/git/commits/${ref.object.sha}`);
+    const libFile = await gh(`/repos/${repo}/contents/library.json?ref=${branch}`);
+    const lib = JSON.parse(libFile.content ? unb64(libFile.content) : await (await fetch(libFile.download_url)).text());
+    // same rule as scripts/build-library.js: titles without filters stay out, keys sorted by file name
+    const hasFilters = (it) => Array.isArray(it.filters) && it.filters.length > 0;
+    if (hasFilters(item)) lib[key] = item; else delete lib[key];
+    const sorted = Object.fromEntries(Object.keys(lib).sort().map((k) => [k, lib[k]]));
+    const files = [[`library/${key}.json`, JSON.stringify(item, null, 2) + "\n"], ["library.json", JSON.stringify(sorted)]];
+    const tree = [];
+    for (const [path, content] of files) {
+      const blob = await gh(`/repos/${repo}/git/blobs`, { method: "POST", body: JSON.stringify({ content: b64(content), encoding: "base64" }) });
+      tree.push({ path, mode: "100644", type: "blob", sha: blob.sha });
+    }
+    const newTree = await gh(`/repos/${repo}/git/trees`, { method: "POST", body: JSON.stringify({ base_tree: head.tree.sha, tree }) });
+    const src = U.attribution?.source || U.source;
+    const commit = await gh(`/repos/${repo}/git/commits`, { method: "POST", body: JSON.stringify({
+      message: `Import/review timings: ${item.title} (${src})\n\n${item.filters.filter((f) => f.verified === false).length} unreviewed, ${item.filters.length} total.`,
+      tree: newTree.sha, parents: [head.sha] }) });
+    await gh(`/repos/${repo}/git/refs/heads/${branch}`, { method: "PATCH", body: JSON.stringify({ sha: commit.sha }) });
+    log(`✅ نُشر: ${commit.html_url || commit.sha}`);
+  } catch (e) { log("❌ " + e.message); }
+  $("#publish").disabled = false;
+});
+</script>
+</body>
+</html>

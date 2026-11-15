@@ -185,6 +185,18 @@ function YouTubeSkipCard({ ytSkip, onToggle }) {
     `;
 }
 
+/* Imported timings nobody has reviewed yet (verified:false) are off unless the viewer turns this on. */
+function CommunityTimingsCard() {
+    const [on, setOn] = useState(false);
+    useEffect(() => { S.getCommunityUnverified().then(setOn); }, []);
+    return html`
+        <div class="card" style=${{ marginTop: "10px" }}>
+            <${FeatureToggleRow} label="توقيتات المجتمع غير المراجعة"
+                description="مشاهد مستوردة من مشاريع أخرى (MovieContentFilter وVideoSkip) لم يراجعها أحد بعد؛ قد تكون غير دقيقة."
+                enabled=${on} onToggle=${async () => { const v = !on; setOn(v); await S.setCommunityUnverified(v); }} />
+        </div>`;
+}
+
 function ControlTab({ currentItemDisplay, categorizedDetailed, filterSettings, onToggleGroup, onToggleSubcategory, itemKey, disabledMap, onToggleFilter, ratingTitle, durationMinutes, subtitleCensorEnabled, onToggleSubtitleCensor, ytAutoMuteEnabled, onToggleYtAutoMute, ytSkip, onToggleYtSkip }) {
     const groupKeys = ["nudity", "violence", "language", "substance"];
     return html`
@@ -198,6 +210,7 @@ function ControlTab({ currentItemDisplay, categorizedDetailed, filterSettings, o
                     ytAutoMuteEnabled=${ytAutoMuteEnabled} onToggleYtAutoMute=${onToggleYtAutoMute} />
             `)}
             ${ytSkip ? html`<${YouTubeSkipCard} ytSkip=${ytSkip} onToggle=${onToggleYtSkip} />` : null}
+            <${CommunityTimingsCard} />
             <div class="rating-box">
                 <strong>${ratingTitle}</strong>
             </div>
@@ -557,7 +570,21 @@ function ContentSuggestionForm() {
     `;
 }
 
-function AccountTab({ ratingTitle }) {
+function AboutCredits({ library }) {
+    const credits = (globalThis.SalikCredits ? globalThis.SalikCredits.collectCredits(library) : []);
+    if (!credits.length) return null;
+    return html`
+        <div class="card" style=${{ marginTop: "10px", padding: "12px" }}>
+            <p style=${{ fontSize: "0.85rem", fontWeight: 700, margin: "0 0 6px" }}>عن سالك: مصادر البيانات</p>
+            ${credits.map((c) => html`
+                <div key=${c.source} style=${{ fontSize: "0.75rem", margin: "6px 0", color: "var(--text-muted)" }}>
+                    <a href="#" onClick=${(e) => { e.preventDefault(); chrome.tabs.create({ url: c.url }); }} style=${{ fontWeight: 700, color: "var(--primary)" }}>${c.source}</a>
+                    ${" — " + c.use}${c.titles ? ` (${c.titles})` : ""}${c.license ? html`<br/><span>${c.license}</span>` : null}
+                </div>`)}
+        </div>`;
+}
+
+function AccountTab({ ratingTitle, library }) {
     const C = (typeof SALIK_CONFIG !== "undefined") ? SALIK_CONFIG : {};
     const open = (u) => chrome.tabs.create({ url: u });
     const btn = { width: "100%", marginTop: "8px", padding: "10px", border: "none", borderRadius: "8px", fontWeight: 700, cursor: "pointer" };
@@ -574,6 +601,7 @@ function AccountTab({ ratingTitle }) {
                 <button style=${{ ...btn, background: "#fff", color: "var(--primary)", border: "1px solid var(--primary)" }} onClick=${() => open(C.GITHUB_URL)}>الشيفرة المصدرية على GitHub</button>
             </div>
 
+            <${AboutCredits} library=${library} />
             <${SceneReportForm} defaultTitle=${ratingTitle !== "منصة تصفح" ? ratingTitle : ""} />
             <${ContentSuggestionForm} />
 
@@ -816,7 +844,7 @@ function App() {
                     searchQuery=${searchQuery} onSearchChange=${(v) => { setSearchQuery(v); if (v) setActivePlatformFilter("all"); }} />
             ` : null}
             ${activeTab === "account" ? html`
-                <${AccountTab} ratingTitle=${ratingTitle} />
+                <${AccountTab} ratingTitle=${ratingTitle} library=${library} />
             ` : null}
         </div>
     `;

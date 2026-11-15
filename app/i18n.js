@@ -1,6 +1,9 @@
 
 const DICT = {
     "التحكم": "Filters", "المنصات": "Platforms", "الحساب": "Account",
+    "توقيتات المجتمع غير المراجعة": "Unreviewed community timings",
+    "مشاهد مستوردة من مشاريع أخرى (MovieContentFilter وVideoSkip) لم يراجعها أحد بعد؛ قد تكون غير دقيقة.": "Scenes imported from other projects (MovieContentFilter, VideoSkip) that nobody has reviewed yet; they may be inaccurate.",
+    "عن سالك: مصادر البيانات": "About Salik: data sources",
     "نتفليكس": "Netflix", "أمازون": "Prime Video", "يانجو": "Yango Play", "ديزني+": "Disney+", "شاهد": "Shahid",
     "واتش ات": "Watch It", "تود": "Tod", "يوتيوب": "YouTube",
     "لا يوجد": "None", "لا يوجد مشاهد من هذا النوع حالياً": "No scenes of this type",

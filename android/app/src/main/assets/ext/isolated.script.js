@@ -31,6 +31,7 @@ window.addEventListener("message", (event) => {
     currentLibraryKey = event.data.libraryKey || currentLibraryKey;
     disabledFilterIds = event.data.disabledFilterIds || disabledFilterIds;
     currentItemPlatforms = event.data.platforms || currentItemPlatforms;
+    if (event.data.sync !== undefined) currentItemSync = event.data.sync;
 });
 
 let disneyPlayheadSeconds = null;
@@ -92,6 +93,7 @@ chrome.runtime.onMessage.addListener((request) => {
 let currentMovieId = null;
 let currentLibraryKey = null;
 let currentItemPlatforms = {};
+let currentItemSync = null; // { runtimeSec, platformVersion, reference: {time, desc} } of the release the timings were made on
 let currentEpisodeNumber = 1;
 let activeFilters = [];
 let disabledFilterIds = {};
@@ -162,6 +164,10 @@ chrome.storage.sync.get(['nazafaSubtitleCensorEnabled', 'nazafaYtAutoMuteEnabled
     if (res.nazafaSubtitleCensorEnabled !== undefined) nazafaSubtitleCensorEnabled = res.nazafaSubtitleCensorEnabled;
     if (res.nazafaYtAutoMuteEnabled !== undefined) nazafaYtAutoMuteEnabled = res.nazafaYtAutoMuteEnabled;
     broadcastSubtitleCensorSetting();
+});
+
+chrome.storage.sync.get(['salikCommunityUnverified'], (res) => {
+    NazafaCore.withCommunityFlag(filterSettings, res.salikCommunityUnverified === true);
 });
 
 chrome.storage.sync.get(['nazafaFilterSettings', 'filter_nudity', 'filter_violence', 'filter_language', 'filter_substance'], (res) => {
@@ -257,6 +263,9 @@ function loadDisabledFiltersForCurrentItem() {
 }
 
 chrome.runtime.onMessage.addListener((request) => {
+    if (request.type === "UPDATE_COMMUNITY_UNVERIFIED") {
+        NazafaCore.withCommunityFlag(filterSettings, !!request.enabled);
+    }
     if (request.type === "UPDATE_FILTER_SETTINGS") {
         userSettings[request.category] = request.enabled;
         if (filterSettings[request.category]) filterSettings[request.category].enabled = request.enabled;
@@ -438,13 +447,15 @@ function fetchFiltersFromBackground(movieId, episodeNumber) {
             window.activeFilters = response.data.filters || [];
             currentLibraryKey = response.data._libraryKey || movieId;
             currentItemPlatforms = response.data.platforms || {};
+            currentItemSync = response.data.sync || null;
             loadDisabledFiltersForCurrentItem();
             broadcastToAllFrames({
                 type: "NAZAFA_SYNC_FILTERS",
                 filters: window.activeFilters,
                 libraryKey: currentLibraryKey,
                 disabledFilterIds: disabledFilterIds,
-                platforms: currentItemPlatforms
+                platforms: currentItemPlatforms,
+                sync: currentItemSync
             });
             broadcastSubtitleCensorSetting();
         } else if (response && response.error === "SUBSCRIPTION_REQUIRED") {
@@ -453,6 +464,7 @@ function fetchFiltersFromBackground(movieId, episodeNumber) {
             window.activeFilters = [];
             currentLibraryKey = null;
             currentItemPlatforms = {};
+            currentItemSync = null;
             disabledFilterIds = {};
             broadcastToAllFrames({
                 type: "NAZAFA_SYNC_FILTERS",
@@ -501,6 +513,82 @@ function brainLoop(timestamp) {
 }
 
 
+/* ---------- Sync with the release the timings were made on (per title and platform, saved on this device) ---------- */
+
+let nazafaUserOffsets = {};
+chrome.storage.local.get(['salikPlatformOffsets'], (res) => { nazafaUserOffsets = res.salikPlatformOffsets || {}; });
+
+function nazafaUserOffset(platform) {
+    const v = currentLibraryKey && nazafaUserOffsets[currentLibraryKey] && nazafaUserOffsets[currentLibraryKey][platform];
+    return typeof v === "number" && isFinite(v) ? v : null;
+}
+
+function nazafaSaveUserOffset(platform, value) {
+    if (!currentLibraryKey) return;
+    const per = Object.assign({}, nazafaUserOffsets[currentLibraryKey] || {});
+    if (value === null) delete per[platform]; else per[platform] = Math.round(value * 100) / 100;
+    nazafaUserOffsets = Object.assign({}, nazafaUserOffsets, { [currentLibraryKey]: per });
+    try { chrome.storage.local.set({ salikPlatformOffsets: nazafaUserOffsets }); } catch (e) {}
+}
+
+/* The moment to sync on: the release's reference (MCF start, VideoSkip screenshot), else the first described scene. */
+function nazafaSyncReference() {
+    if (currentItemSync && currentItemSync.reference && isFinite(currentItemSync.reference.time)) return currentItemSync.reference;
+    const f = (window.activeFilters || []).find((x) => x && isFinite(NazafaCore.timing(x) ? NazafaCore.timing(x).start : NaN) && x.original_description);
+    return f ? { time: NazafaCore.timing(f).start, desc: f.original_description } : null;
+}
+
+let nazafaSyncEl = null;
+let nazafaSyncOpen = false;
+let nazafaSyncDismissedFor = null;
+
+function nazafaFmtClock(t) {
+    t = Math.max(0, Math.floor(t));
+    const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = String(t % 60).padStart(2, "0");
+    return h ? `${h}:${String(m).padStart(2, "0")}:${s}` : `${m}:${s}`;
+}
+
+function nazafaSyncUi(state, video, platform, offset) {
+    const key = currentLibraryKey + "|" + platform;
+    const want = (state.status !== "ok" || nazafaSyncOpen) && nazafaSyncDismissedFor !== key;
+    if (!want) { if (nazafaSyncEl) { nazafaSyncEl.remove(); nazafaSyncEl = null; } return; }
+    const host = document.fullscreenElement || document.webkitFullscreenElement || document.body;
+    if (!nazafaSyncEl) {
+        nazafaSyncEl = document.createElement("div");
+        nazafaSyncEl.setAttribute("dir", "rtl");
+        nazafaSyncEl.style.cssText = "position:fixed;bottom:90px;right:20px;z-index:2147483647;max-width:360px;background:rgba(15,23,20,.92);color:#fff;" +
+            "font:14px/1.6 Tajawal,Segoe UI,sans-serif;padding:10px 12px;border-radius:12px;box-shadow:0 4px 18px rgba(0,0,0,.4);";
+        nazafaSyncEl.addEventListener("click", (e) => {
+            const b = e.target.closest("button");
+            if (!b) return;
+            e.stopPropagation();
+            const v = getActiveVideoElement();
+            const ref = nazafaSyncReference();
+            if (b.dataset.act === "open") nazafaSyncOpen = true;
+            if (b.dataset.act === "here" && v && ref) { nazafaSaveUserOffset(platform, ref.time - v.currentTime); nazafaSyncOpen = false; }
+            // "earlier" = the filters act sooner (the video runs ahead of the timings)
+            if (b.dataset.act === "earlier") nazafaSaveUserOffset(platform, (nazafaUserOffset(platform) ?? offset) + 0.5);
+            if (b.dataset.act === "later") nazafaSaveUserOffset(platform, (nazafaUserOffset(platform) ?? offset) - 0.5);
+            if (b.dataset.act === "reset") nazafaSaveUserOffset(platform, null);
+            if (b.dataset.act === "close") { nazafaSyncOpen = false; nazafaSyncDismissedFor = key; }
+            nazafaSyncEl.dataset.render = "";
+        }, true);
+    }
+    if (nazafaSyncEl.parentNode !== host) host.appendChild(nazafaSyncEl);
+    const ref = nazafaSyncReference();
+    const btn = (act, label) => `<button data-act="${act}" style="margin:4px 0 0 6px;padding:4px 10px;border:0;border-radius:8px;background:#1f8a5c;color:#fff;cursor:pointer;font:inherit">${label}</button>`;
+    const user = nazafaUserOffset(platform);
+    const html = !nazafaSyncOpen
+        ? `🛡️ ${state.status === "mismatch" ? "نسخة هذا العمل مختلفة عن نسخة توقيتات سالك؛ الفلاتر متوقفة حتى تزامنها." : "مدة هذه النسخة تختلف عن نسخة التوقيتات بـ " + Math.abs(state.diff) + " ث."}<br>` +
+          btn("open", "مزامنة") + btn("close", "إخفاء")
+        : `🛡️ <b>مزامنة سالك</b><br>` + (ref
+            ? `شغّل الفيديو حتى هذه اللقطة ثم اضغط «هنا»:<br><i>${String(ref.desc || "").replace(/[<>&]/g, "")}</i><br><span style="opacity:.75">(عند ${nazafaFmtClock(ref.time)} في نسخة التوقيتات)</span><br>` + btn("here", "هنا")
+            : "لا توجد لقطة مرجعية لهذا العمل.<br>") +
+          btn("earlier", "أبكر ½ ث") + btn("later", "أبطأ ½ ث") +
+          (user !== null ? `<br><span style="opacity:.75">الإزاحة الحالية: ${user} ث</span>` + btn("reset", "إلغاء المزامنة") : "") + btn("close", "إغلاق");
+    if (nazafaSyncEl.dataset.render !== html) { nazafaSyncEl.innerHTML = html; nazafaSyncEl.dataset.render = html; }
+}
+
 function processActiveFilters() {
     const nazafaFilters = nazafaSbFilters.length ? (window.activeFilters || []).concat(nazafaSbFilters) : window.activeFilters;
     if (!nazafaFilters || nazafaFilters.length === 0) {
@@ -515,7 +603,14 @@ function processActiveFilters() {
     reportVideoDurationIfChanged(video);
 
     const platform = detectPlatform();
-    const platformOffset = Number(currentItemPlatforms && currentItemPlatforms[platform] && currentItemPlatforms[platform].offset_seconds) || 0;
+    const userOffset = nazafaUserOffset(platform);
+    const platformOffset = userOffset !== null ? userOffset
+        : (Number(currentItemPlatforms && currentItemPlatforms[platform] && currentItemPlatforms[platform].offset_seconds) || 0);
+    const runtimeSec = (currentItemPlatforms && currentItemPlatforms[platform] && currentItemPlatforms[platform].runtime_sec)
+        || (currentItemSync && currentItemSync.runtimeSec);
+    const syncState = NazafaCore.syncDecision(video.duration, runtimeSec, userOffset !== null);
+    nazafaSyncUi(syncState, video, platform, platformOffset);
+    if (syncState.status === "mismatch") { nazafaReleaseEngineState(); return; } // another cut: wait for the viewer to sync
 
     const DISNEY_PLAYHEAD_MAX_AGE_MS = 6 * 60 * 60 * 1000;
     const hasFreshDisneyPlayhead = platform === "disney"

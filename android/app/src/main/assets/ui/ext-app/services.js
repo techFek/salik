@@ -207,7 +207,28 @@ function buildDefaultSettings() {
     return Core.buildDefaultSettings();
 }
 
+export const COMMUNITY_UNVERIFIED_KEY = "salikCommunityUnverified";
+
+/* "Unreviewed community timings" (imported, verified:false): off unless the viewer turns it on. */
+export async function getCommunityUnverified() {
+    const r = await new Promise((resolve) => chrome.storage.sync.get([COMMUNITY_UNVERIFIED_KEY], resolve));
+    return r[COMMUNITY_UNVERIFIED_KEY] === true;
+}
+
+export async function setCommunityUnverified(enabled) {
+    await new Promise((resolve) => chrome.storage.sync.set({ [COMMUNITY_UNVERIFIED_KEY]: !!enabled }, resolve));
+    try {
+        const tabs = await chrome.tabs.query({});
+        tabs.forEach((t) => chrome.tabs.sendMessage(t.id, { type: "UPDATE_COMMUNITY_UNVERIFIED", enabled: !!enabled }, () => void chrome.runtime.lastError));
+    } catch (e) { /* no tabs API here (app) */ }
+}
+
 export async function getFilterSettings() {
+    const [settings, community] = await Promise.all([readFilterSettings(), getCommunityUnverified()]);
+    return Core.withCommunityFlag(settings, community);
+}
+
+async function readFilterSettings() {
     const stored = await new Promise((resolve) => {
         chrome.storage.sync.get([SETTINGS_STORAGE_KEY, ...Object.values(LEGACY_FLAT_KEYS)], resolve);
     });

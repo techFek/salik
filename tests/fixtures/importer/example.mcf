@@ -1,0 +1,29 @@
+WEBVTT MovieContentFilter 1.1.0
+
+NOTE
+TITLE Example Movie
+YEAR 2020
+TYPE movie
+IMDB https://www.imdb.com/title/tt0111161/
+RELEASE WEB-DL 1080p
+
+NOTE
+START 00:00:04.020
+END 01:54:12.100
+
+00:00:10.500 --> 00:00:12.750
+punching=low=both
+
+00:03:01.000 --> 00:03:02.200
+language=high=audio # f-word
+
+00:06:14.000 --> 00:06:17.581
+gambling=medium # Some comment
+drugs=high=video
+sex=low=both # Another comment
+
+00:07:00.000 --> 00:07:03.000
+sexualDialogue=medium
+
+00:08:00.000 --> 00:08:01.000
+notACategory=high

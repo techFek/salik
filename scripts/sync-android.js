@@ -14,6 +14,7 @@ const ASSETS = path.join(ROOT, "android", "app", "src", "main", "assets");
 
 const FILES = [
     ["shared/filter-core.js", "shared/filter-core.js"],
+    ["shared/credits.js", "shared/credits.js"],
     ["isolated.script.js", "ext/isolated.script.js"],
     ["main.script.js", "ext/main.script.js"],
     ["subtitle-censor-core.js", "ext/subtitle-censor-core.js"],

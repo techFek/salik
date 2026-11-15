@@ -3,7 +3,7 @@ import {
   getFilterSettings, setGroupEnabled, setSubcategoryEnabled,
   getSubtitleCensorEnabled, setSubtitleCensorEnabled, getYtAutoMuteEnabled, setYtAutoMuteEnabled,
   getYtSkip, setYtSkipOption, YT_SKIP_OPTIONS,
-  getDisabledFiltersStore, getUrlForPlatform,
+  getDisabledFiltersStore, getUrlForPlatform, setCommunityUnverified,
   SEVERITY_META, getSeverityLevel
 } from "./ext-app/services.js";
 import { LANG, t as extT, localizeLibrary } from "./ext-app/i18n.js";
@@ -142,7 +142,10 @@ const STR = {
   loadingHint: ["يستغرق ذلك ثواني في المرة الأولى فقط.", "This takes a few seconds the first time only."],
   loadFail: ["تعذّر تحميل المكتبة", "Couldn't load the library"],
   loadFailHint: ["تأكد من الاتصال بالإنترنت ثم أعد المحاولة.", "Check your internet connection and try again."],
-  retry: ["إعادة المحاولة", "Try again"]
+  retry: ["إعادة المحاولة", "Try again"],
+  community: ["توقيتات المجتمع غير المراجعة", "Unreviewed community timings"],
+  communityHint: ["مشاهد مستوردة من مشاريع أخرى (MovieContentFilter وVideoSkip) لم يراجعها أحد بعد؛ قد تكون غير دقيقة.", "Scenes imported from other projects (MovieContentFilter, VideoSkip) that nobody has reviewed yet; they may be inaccurate."],
+  credits: ["عن سالك: مصادر البيانات", "About Salik: data sources"]
 };
 const T = (k, vars) => {
   let s = (STR[k] || [k, k])[EN ? 1 : 0];
@@ -506,6 +509,9 @@ async function renderSettings() {
         <button class="group-row ${S.ytAutoMute ? "on" : ""}" data-nav data-fid="yt-mute" data-yt-mute>
           <span class="gr-main"><span class="gr-name">${T("ytMute")}</span><br><span class="gr-sub">${T("ytMuteHint")}</span></span>
           <i class="toggle ${S.ytAutoMute ? "on" : ""}"></i></button>
+        <button class="group-row ${S.settings?.communityUnverified ? "on" : ""}" data-nav data-fid="community" data-community>
+          <span class="gr-main"><span class="gr-name">${T("community")}</span><br><span class="gr-sub">${T("communityHint")}</span></span>
+          <i class="toggle ${S.settings?.communityUnverified ? "on" : ""}"></i></button>
         <p class="hint" style="margin-top:14px">${T("ytSkip")}: ${T("ytSkipHint")}</p>
         ${YT_SKIP_OPTIONS.map((o) => { const on = S.ytSkip && S.ytSkip[o.key] !== false; return `<button class="group-row ${on ? "on" : ""}" data-nav data-fid="ytskip-${o.key}" data-yt-skip="${o.key}">
           <span class="gr-main"><span class="gr-name">⏭️ ${esc(EN ? o.labelEn : o.label)}</span></span>
@@ -531,6 +537,9 @@ async function renderSettings() {
             <span class="gr-main"><span class="gr-name">${T("suggestions")}</span><br><span class="gr-sub">${T("suggestionsHint")}</span></span></button>
           <button class="group-row" data-nav data-fid="source" data-source>
             <span class="gr-main"><span class="gr-name">${T("sourceCode")}</span><br><span class="gr-sub" dir="ltr">github.com/techFek/salik</span></span></button>
+        </div>
+        <div class="panel" style="margin-top:20px"><h3>${T("credits")}</h3>
+          ${(globalThis.SalikCredits ? globalThis.SalikCredits.collectCredits(S.byKey) : []).map((c) => `<p class="hint"><b dir="ltr">${esc(c.source)}</b> · ${esc(c.use)}${c.titles ? ` (${c.titles})` : ""}${c.license ? `<br><span dir="ltr">${esc(c.license)}</span>` : ""}</p>`).join("")}
         </div>
         <div class="panel" style="margin-top:20px"><h3>${T("platforms")}</h3><p class="hint">${T("loginHint")}</p>
           <div class="link-list">${Object.keys(PLATFORMS).map((p) => `<button class="link-row" style="--pc:${PLATFORMS[p].color}" data-nav data-fid="lp-${p}" data-platform-home="${p}"><b><bdi>${pMark(p)}</bdi></b><span>${T("openSignIn")}</span></button>`).join("")}</div>
@@ -728,6 +737,12 @@ document.addEventListener("click", async (e) => {
   }
   if (d.removeRecent) { removeRecent(d.removeRecent); return; }
   if (d.closeBtn !== undefined) { closeModal(); return; }
+  if (d.community !== undefined) {
+    const on = !S.settings?.communityUnverified;
+    setCommunityUnverified(on);
+    globalThis.SalikFilterCore.withCommunityFlag(S.settings, on);
+    rerender(el.dataset.fid); return;
+  }
   if (d.subtitleCensor !== undefined) { S.subtitleCensor = !S.subtitleCensor; setSubtitleCensorEnabled(S.subtitleCensor); rerender(el.dataset.fid); return; }
   if (d.expandTitle) { const c = current(); c.openGroup = c.openGroup === d.expandTitle ? "" : d.expandTitle; rerender(el.dataset.fid); return; }
   if (d.filter) {

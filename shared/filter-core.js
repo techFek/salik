@@ -205,11 +205,44 @@
         return subKeys.some((k) => subs[k] !== false);
     }
 
+    /*
+     * Imported community timings (verified:false) are used only when the viewer turned on
+     * "unreviewed community timings" (settings.communityUnverified). Library filters without the field are reviewed.
+     */
+    function isUnverifiedAllowed(filterItem, settings) {
+        return !(filterItem && filterItem.verified === false) || !!(settings && settings.communityUnverified === true);
+    }
+
+    /* The flag rides on the settings object without being one of its groups (code loops over the group keys). */
+    function withCommunityFlag(settings, on) {
+        if (settings && typeof settings === "object") {
+            Object.defineProperty(settings, "communityUnverified", { value: !!on, writable: true, enumerable: false, configurable: true });
+        }
+        return settings;
+    }
+
     function shouldFilter(filterItem, settings) {
+        if (!isUnverifiedAllowed(filterItem, settings)) return false;
         const parts = classify(filterItem);
         if (!parts.length) return false;
         if (!settings) return true;
         return parts.some(({ groupKey, subKeys }) => groupAllows(settings[groupKey], subKeys));
+    }
+
+    /*
+     * Does the playing video match the release the timings were made on?
+     *   ok        within 2 s (or nothing to compare)
+     *   offer     2–60 s apart: timings still apply, offer the "sync" button
+     *   mismatch  more than 60 s apart: a different cut; timings are not applied until the viewer syncs
+     * A sync the viewer already did (hasUserOffset) always counts as ok.
+     */
+    const SYNC_OFFER_S = 2, SYNC_MISMATCH_S = 60;
+    function syncDecision(videoDuration, runtimeSec, hasUserOffset) {
+        const d = Number(videoDuration), r = Number(runtimeSec);
+        if (hasUserOffset || !(d > 0) || !isFinite(d) || !(r > 0)) return { status: "ok", diff: 0 };
+        const diff = d - r;
+        const abs = Math.abs(diff);
+        return { status: abs > SYNC_MISMATCH_S ? "mismatch" : abs > SYNC_OFFER_S ? "offer" : "ok", diff: Math.round(diff * 10) / 10 };
     }
 
     function buildDefaultSettings() {
@@ -627,6 +660,7 @@
         SUBCATEGORY_SCHEMA: SCHEMA, GROUP_KEYS, OTHER_SUBKEY,
         normalizeToGroupKey, groupsOf, normalizeArabic, buildHaystack,
         keywordInText, keywordMatches, matchSubcategory, classify, matchAllSubcategories, belongsOnlyTo,
+        isUnverifiedAllowed, withCommunityFlag, syncDecision, SYNC_OFFER_S, SYNC_MISMATCH_S,
         shouldFilter, buildDefaultSettings, categorizeFiltersDetailed, categorizeFilters,
         titleGroupStates, toggleTitleGroupStore, subtitleCategoryEnabled,
         timing, actionOf, resolveActiveFilters, createMuteArbiter, validateLibrary,
