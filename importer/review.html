@@ -187,7 +187,9 @@ function setUnified(u) {
 }
 
 function showRef() {
-  $("#refInfo").innerHTML = U?.reference ? `اللقطة المرجعية: <b>${esc(U.reference.desc)}</b> عند <span dir="ltr">${clock(U.reference.time)}</span> في نسخة الملف. شغّل فيديوك عليها واضغط الزر.` : "لا توجد لقطة مرجعية في الملف: استخدم أول مشهد بدلًا منها.";
+  $("#refInfo").innerHTML = U?.reference ? `اللقطة المرجعية: <b>${esc(U.reference.desc)}</b> عند <span dir="ltr">${clock(U.reference.time)}</span> في نسخة الملف. شغّل فيديوك عليها واضغط الزر.` +
+    (U.reference.image && /^data:image\/(png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$/.test(U.reference.image) ? `<br><img src="${U.reference.image}" alt="" style="max-width:100%;border-radius:8px;margin-top:6px">` : "")
+    : "لا توجد لقطة مرجعية في الملف: استخدم أول مشهد بدلًا منها.";
 }
 
 /* ---------- table ---------- */

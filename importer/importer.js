@@ -194,7 +194,11 @@ export function parseVideoSkip(text, meta = {}) {
         if (!cue) {
             // screenshot entry: a time with its description under it -> sync reference
             const t = parseTime(lines[0]);
-            if (!isNaN(t) && !u.reference) u.reference = { time: round2(t), desc: (lines.slice(1).find((l) => !/^data:image/.test(l)) || "VideoSkip screenshot").slice(0, 200) };
+            if (!isNaN(t) && !u.reference) {
+                u.reference = { time: round2(t), desc: (lines.slice(1).find((l) => !/^data:image/.test(l)) || "VideoSkip screenshot").slice(0, 200) };
+                const img = lines.find((l) => /^data:image\/(png|jpe?g|webp);base64,/.test(l));
+                if (img) u.reference.image = img;   // the screenshot VideoSkip took, shown on the review page (not stored in the library)
+            }
             continue;
         }
         const start = parseTime(cue[1]), end = parseTime(cue[2]);
@@ -301,7 +305,8 @@ export function mergeIntoItem(item, u, { title } = {}) {
     const added = toSalikFilters(u, { startId: nextId }).filter((f) => !out.filters.some((g) => g.category === f.category && overlaps(f, g)));
     out.filters = out.filters.concat(added).sort((a, b) => a.start - b.start);
     if (u.runtimeSec && !(out.sync && out.sync.runtimeSec)) {
-        out.sync = { runtimeSec: u.runtimeSec, platformVersion: u.platformVersion, ...(u.reference ? { reference: u.reference } : {}) };
+        const ref = u.reference ? { time: u.reference.time, desc: u.reference.desc } : null;
+        out.sync = { runtimeSec: u.runtimeSec, platformVersion: u.platformVersion, ...(ref ? { reference: ref } : {}) };
     }
     if (u.attribution) {
         out.attribution = Array.isArray(out.attribution) ? out.attribution : [];
