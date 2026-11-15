@@ -56,6 +56,9 @@
 
     <div class="panel"><h2>2. الفيديو والمزامنة</h2>
       <label>ملف الفيديو (نفس النسخة التي ستراجع عليها)</label><input type="file" id="videoFile" accept="video/*,.mkv">
+      <label>أو رابط فيديو مباشر (مثلًا رابط Stremio: http://127.0.0.1:11470/…)</label>
+      <div class="row"><input type="text" id="videoUrl" dir="ltr" placeholder="http://127.0.0.1:11470/…"><button class="btn" id="openUrl">تشغيل الرابط</button></div>
+      <div class="hint" id="videoErr"></div>
       <div class="row">
         <div><label>runtimeSec (مدة نسخة التوقيتات)</label><input type="number" step="0.1" id="runtime"></div>
         <div><button class="btn" id="useDuration">= مدة هذا الفيديو</button></div>
@@ -211,7 +214,15 @@ function mark(i, st) { const s = U.segments[i]; s._state = s._state === st ? "" 
 /* ---------- video ---------- */
 const v = $("#video");
 let stopAt = null;
-$("#videoFile").addEventListener("change", (e) => { const f = e.target.files[0]; if (f) v.src = URL.createObjectURL(f); });
+$("#videoFile").addEventListener("change", (e) => { const f = e.target.files[0]; if (f) { $("#videoErr").textContent = ""; v.src = URL.createObjectURL(f); } });
+$("#openUrl").addEventListener("click", () => {
+  const u = $("#videoUrl").value.trim();
+  if (!/^https?:\/\//i.test(u)) { alert("الصق رابطًا يبدأ بـ http"); return; }
+  $("#videoErr").textContent = ""; $("#runtime").value = ""; v.src = u;
+});
+v.addEventListener("error", () => {
+  $("#videoErr").innerHTML = '<span class="warn">المتصفح لا يستطيع تشغيل هذا الفيديو (غالبًا صيغة الصوت مثل AC3/EAC3 أو الفيديو HEVC). اختر من Stremio نسخة MP4 / H.264 مع صوت AAC.</span>';
+});
 v.addEventListener("loadedmetadata", () => { if (!$("#runtime").value) $("#runtime").value = v.duration.toFixed(1); });
 $("#useDuration").addEventListener("click", () => { if (v.duration) $("#runtime").value = v.duration.toFixed(1); });
 v.addEventListener("timeupdate", () => { if (stopAt !== null && v.currentTime >= stopAt) { v.pause(); stopAt = null; } });
