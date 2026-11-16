@@ -1,0 +1,11 @@
+/* Side panel is narrow (≈ 360–600 px): one column, tight padding, the table scrolls sideways on its own. */
+html, body { overflow-x: hidden; }
+.app { padding: 12px 12px 60px; min-width: 0; }
+.layout { grid-template-columns: minmax(0, 1fr) !important; gap: 14px; }
+.layout > * { min-width: 0; }
+header.top { gap: 10px; }
+.title-field input { min-width: 0; width: 100%; }
+.table-wrap { overflow-x: auto; max-width: 100%; }
+.st-pick-panel { max-width: 260px; }
+.stats { flex-wrap: wrap; row-gap: 8px; }
+.stat { padding: 0 10px; }
