@@ -1,0 +1,839 @@
+{
+  "addedAt": 1794951259294,
+  "category": "Hollywood",
+  "description": "فلم يحكي السيرة الذاتية وقصة العالم الأمريكي روبرت أوبنهايمر ودوره في تطوير القنبلة الذرية، وكيف غير مشروع مانهاتن من كل شيء في العالم.",
+  "filters": [
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 242.51,
+      "id": 1,
+      "original_description": "christ",
+      "start": 241.94
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 258.13,
+      "id": 2,
+      "original_description": "damn",
+      "start": 257.89
+    },
+    {
+      "action_type": "skip",
+      "category": "nudity",
+      "end": 479.24,
+      "id": 3,
+      "original_description": "امرأة عاريةة في الصور",
+      "start": 476.75
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 658.95,
+      "id": 4,
+      "original_description": "god",
+      "start": 658.69
+    },
+    {
+      "action_type": "partial_blur",
+      "category": "substance abuse",
+      "end": 1227,
+      "id": 5,
+      "original_description": "",
+      "start": 1225.1,
+      "blur_region": {
+        "x": 0.395,
+        "y": 0.433,
+        "width": 0.223,
+        "height": 0.483
+      }
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 1234.73,
+      "id": 6,
+      "original_description": "jesus",
+      "start": 1233.84
+    },
+    {
+      "action_type": "skip",
+      "category": "nudity",
+      "end": 1480.68,
+      "id": 7,
+      "original_description": "sex: intercourse",
+      "start": 1393.73
+    },
+    {
+      "action_type": "skip",
+      "category": "substance abuse",
+      "end": 1537.95,
+      "id": 8,
+      "original_description": "رجل يشرب الخمر",
+      "start": 1532.55
+    },
+    {
+      "action_type": "skip",
+      "category": "substance abuse",
+      "end": 1557.61,
+      "id": 9,
+      "original_description": "رجل يشرب الخمر",
+      "start": 1556.61
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 1608.8,
+      "id": 10,
+      "original_description": "shitty",
+      "start": 1608.56
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 1749.6,
+      "id": 11,
+      "original_description": "fucking",
+      "start": 1749.58
+    },
+    {
+      "action_type": "skip",
+      "category": "substance abuse",
+      "end": 2044.77,
+      "id": 12,
+      "original_description": "امرأة تشرب الخمر",
+      "start": 2043.97
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 2087.03,
+      "id": 13,
+      "original_description": "hell",
+      "start": 2086.64
+    },
+    {
+      "action_type": "skip",
+      "category": "nudity",
+      "end": 2095.3,
+      "id": 14,
+      "original_description": "رجل يقبل امرأة",
+      "start": 2089.28
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 2145.01,
+      "id": 15,
+      "original_description": "idiot",
+      "start": 2144.39
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 2208.88,
+      "id": 16,
+      "original_description": "shit",
+      "start": 2208.05
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 2241.07,
+      "id": 17,
+      "original_description": "goddamn",
+      "start": 2240.45
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 2388.68,
+      "id": 18,
+      "original_description": "fool",
+      "start": 2388.11
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 2402.3,
+      "id": 19,
+      "original_description": "beer",
+      "start": 2401.65
+    },
+    {
+      "action_type": "skip",
+      "category": "nudity",
+      "end": 2449.7,
+      "id": 20,
+      "original_description": "امرأة تقبل رجل",
+      "start": 2447.74
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 2460.9,
+      "id": 21,
+      "original_description": "fucking",
+      "start": 2460.42
+    },
+    {
+      "action_type": "partial_blur",
+      "category": "substance abuse",
+      "end": 2618.64,
+      "id": 22,
+      "original_description": "رجل يشرب سيجارة",
+      "start": 2617.24,
+      "blur_region": {
+        "x": 0.36,
+        "y": 0.376,
+        "width": 0.106,
+        "height": 0.152
+      }
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 2620.89,
+      "id": 23,
+      "original_description": "ass",
+      "start": 2620.47
+    },
+    {
+      "action_type": "partial_blur",
+      "category": "language",
+      "end": 2621.57,
+      "id": 24,
+      "original_description": "damn",
+      "start": 2621.3,
+      "blur_region": {
+        "x": 0.283,
+        "y": 0.424,
+        "width": 0.151,
+        "height": 0.198
+      }
+    },
+    {
+      "action_type": "partial_blur",
+      "category": "substance abuse",
+      "end": 2642.89,
+      "id": 25,
+      "original_description": "رجل يشرب سيجارة",
+      "start": 2625.32,
+      "blur_region": {
+        "x": 0.262,
+        "y": 0.438,
+        "width": 0.176,
+        "height": 0.257
+      }
+    },
+    {
+      "action_type": "partial_blur",
+      "category": "substance abuse",
+      "end": 2702.8,
+      "id": 26,
+      "original_description": "رجل يشرب سيجارة",
+      "start": 2660.66,
+      "blur_region": {
+        "x": 0.085,
+        "y": 0.369,
+        "width": 0.335,
+        "height": 0.428
+      }
+    },
+    {
+      "action_type": "skip",
+      "category": "violence",
+      "end": 2900.09,
+      "id": 27,
+      "original_description": "شخص يقول تعليق ايحائي",
+      "start": 2897.6
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 2934.87,
+      "id": 28,
+      "original_description": "god",
+      "start": 2934.22
+    },
+    {
+      "action_type": "partial_blur",
+      "category": "language",
+      "end": 2946.93,
+      "id": 29,
+      "original_description": "fucking",
+      "start": 2946.6,
+      "blur_region": {
+        "x": 0.296,
+        "y": 0.349,
+        "width": 0.19,
+        "height": 0.46
+      }
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 2952.49,
+      "id": 30,
+      "original_description": "fuck",
+      "start": 2951.05
+    },
+    {
+      "action_type": "partial_blur",
+      "category": "substance abuse",
+      "end": 3004.48,
+      "id": 31,
+      "original_description": "رجل يشرب السجائر",
+      "start": 3001.28,
+      "blur_region": {
+        "x": 0.118,
+        "y": 0.26,
+        "width": 0.5,
+        "height": 0.63
+      }
+    },
+    {
+      "action_type": "partial_blur",
+      "category": "substance abuse",
+      "end": 3016.56,
+      "id": 32,
+      "original_description": "رجل يشرب السجائر",
+      "start": 3011.11,
+      "blur_region": {
+        "x": 0.118,
+        "y": 0.26,
+        "width": 0.5,
+        "height": 0.63
+      }
+    },
+    {
+      "action_type": "partial_blur",
+      "category": "substance abuse",
+      "end": 3029.8,
+      "id": 33,
+      "original_description": "شخص في فمه سجائر",
+      "start": 3027.68,
+      "blur_region": {
+        "x": 0.522,
+        "y": 0.282,
+        "width": 0.103,
+        "height": 0.209
+      }
+    },
+    {
+      "action_type": "partial_blur",
+      "category": "substance abuse",
+      "end": 3042.12,
+      "id": 34,
+      "original_description": "شخص في فمه سجائر",
+      "start": 3039.63,
+      "blur_region": {
+        "x": 0.522,
+        "y": 0.282,
+        "width": 0.103,
+        "height": 0.209
+      }
+    },
+    {
+      "action_type": "skip",
+      "category": "language",
+      "end": 3120.03,
+      "id": 35,
+      "original_description": "shit",
+      "start": 3117.94
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 3439.93,
+      "id": 36,
+      "original_description": "stupid",
+      "start": 3439.32
+    },
+    {
+      "action_type": "skip",
+      "category": "substance abuse",
+      "end": 3475.48,
+      "id": 37,
+      "original_description": "فتاة تسأل عن نوع الخمر",
+      "start": 3473.97
+    },
+    {
+      "action_type": "partial_blur",
+      "category": "language",
+      "end": 3592.2,
+      "id": 38,
+      "original_description": "damn",
+      "start": 3591.83,
+      "blur_region": {
+        "x": 0.247,
+        "y": 0.347,
+        "width": 0.261,
+        "height": 0.337
+      }
+    },
+    {
+      "action_type": "skip",
+      "category": "substance abuse",
+      "end": 3611.72,
+      "id": 39,
+      "original_description": "فتاة تتحدث عن الخمارات",
+      "start": 3609.09
+    },
+    {
+      "action_type": "partial_blur",
+      "category": "substance abuse",
+      "end": 3906.85,
+      "id": 40,
+      "original_description": "رجل في فمه سيجارة",
+      "start": 3903.88,
+      "blur_region": {
+        "x": 0.247,
+        "y": 0.347,
+        "width": 0.261,
+        "height": 0.337
+      }
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 3927.52,
+      "id": 41,
+      "original_description": "stupid",
+      "start": 3927.07
+    },
+    {
+      "action_type": "partial_blur",
+      "category": "substance abuse",
+      "end": 4101.84,
+      "id": 42,
+      "original_description": "رجل في فمه سيجارة",
+      "start": 4095.32,
+      "blur_region": {
+        "x": 0.467,
+        "y": 0.181,
+        "width": 0.516,
+        "height": 0.647
+      }
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 4118.16,
+      "id": 43,
+      "original_description": "hell",
+      "start": 4117.82
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 4269.82,
+      "id": 44,
+      "original_description": "god",
+      "start": 4268.77
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 4390.53,
+      "id": 45,
+      "original_description": "asshole",
+      "start": 4390.03
+    },
+    {
+      "action_type": "blur",
+      "category": "nudity",
+      "end": 4513.82,
+      "id": 46,
+      "original_description": "nudity: 2 naked people talking",
+      "start": 4488.82
+    },
+    {
+      "action_type": "partial_blur",
+      "category": "nudity",
+      "end": 4579.75,
+      "id": 47,
+      "original_description": "sex: intercourse",
+      "start": 4541.7,
+      "blur_region": {
+        "x": 0.064,
+        "y": 0.444,
+        "width": 0.433,
+        "height": 0.455
+      }
+    },
+    {
+      "action_type": "partial_blur",
+      "category": "substance abuse",
+      "end": 4911.47,
+      "id": 48,
+      "original_description": "سيجارة فيد يد احدهم",
+      "start": 4907.64,
+      "blur_region": {
+        "x": 0.064,
+        "y": 0.444,
+        "width": 0.433,
+        "height": 0.455
+      }
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 5240.79,
+      "id": 49,
+      "original_description": "god",
+      "start": 5240.22
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 5422.33,
+      "id": 50,
+      "original_description": "fucking",
+      "start": 5421.99
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 5844.74,
+      "id": 51,
+      "original_description": "god",
+      "start": 5844.38
+    },
+    {
+      "action_type": "partial_blur",
+      "category": "substance abuse",
+      "end": 5875.77,
+      "id": 52,
+      "original_description": "رجل يشعل سيجارة",
+      "start": 5857.22,
+      "blur_region": {
+        "x": 0.44,
+        "y": 0.334,
+        "width": 0.124,
+        "height": 0.17
+      }
+    },
+    {
+      "action_type": "partial_blur",
+      "category": "substance abuse",
+      "end": 6417.21,
+      "id": 53,
+      "original_description": "رجل في فمه سيجارة",
+      "start": 6414.51,
+      "blur_region": {
+        "x": 0.44,
+        "y": 0.334,
+        "width": 0.124,
+        "height": 0.17
+      }
+    },
+    {
+      "action_type": "partial_blur",
+      "category": "substance abuse",
+      "end": 6489.93,
+      "id": 54,
+      "original_description": "رجل يشرب السيجارة",
+      "start": 6485.15,
+      "blur_region": {
+        "x": 0.023,
+        "y": 0.503,
+        "width": 0.571,
+        "height": 0.407
+      }
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 6537.44,
+      "id": 55,
+      "original_description": "jesus",
+      "start": 6535.44
+    },
+    {
+      "action_type": "partial_blur",
+      "category": "substance abuse",
+      "end": 6543.38,
+      "id": 56,
+      "original_description": "رجل في فمه سيجارة",
+      "start": 6541,
+      "blur_region": {
+        "x": 0.371,
+        "y": 0.375,
+        "width": 0.243,
+        "height": 0.26
+      }
+    },
+    {
+      "action_type": "partial_blur",
+      "category": "language",
+      "end": 6579.17,
+      "id": 57,
+      "original_description": "damn",
+      "start": 6578.59,
+      "blur_region": {
+        "x": 0.189,
+        "y": 0.6,
+        "width": 0.339,
+        "height": 0.313
+      }
+    },
+    {
+      "action_type": "partial_blur",
+      "category": "substance abuse",
+      "end": 6664.23,
+      "id": 58,
+      "original_description": "شخص يمسك بسيجارة",
+      "start": 6619.3,
+      "blur_region": {
+        "x": 0.189,
+        "y": 0.6,
+        "width": 0.339,
+        "height": 0.313
+      }
+    },
+    {
+      "action_type": "partial_blur",
+      "category": "substance abuse",
+      "end": 7277.73,
+      "id": 59,
+      "original_description": "شخص يمسك بسيجارة",
+      "start": 7218.28,
+      "blur_region": {
+        "x": 0.346,
+        "y": 0.525,
+        "width": 0.28,
+        "height": 0.319
+      }
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 7312.3,
+      "id": 60,
+      "original_description": "hell",
+      "start": 7312.04
+    },
+    {
+      "action_type": "skip",
+      "category": "substance abuse",
+      "end": 7528.35,
+      "id": 61,
+      "original_description": "تمرير زجاجة خمر",
+      "start": 7524.25
+    },
+    {
+      "action_type": "skip",
+      "category": "violence",
+      "end": 7652.76,
+      "id": 62,
+      "original_description": "امرأة وجهها يتفتت من القنبلة",
+      "start": 7649.18
+    },
+    {
+      "action_type": "skip",
+      "category": "violence",
+      "end": 7684.77,
+      "id": 63,
+      "original_description": "يدوس رجل على رماد جثة",
+      "start": 7673.12
+    },
+    {
+      "action_type": "skip",
+      "category": "nudity",
+      "end": 7702.97,
+      "id": 64,
+      "original_description": "امرأة تقبل رجل",
+      "start": 7700.24
+    },
+    {
+      "action_type": "skip",
+      "category": "violence",
+      "end": 7734.41,
+      "id": 65,
+      "original_description": "رجل يتقيء",
+      "start": 7729.6
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 7919.43,
+      "id": 66,
+      "original_description": "shit",
+      "start": 7918.35
+    },
+    {
+      "action_type": "skip",
+      "category": "substance abuse",
+      "end": 7979.45,
+      "id": 67,
+      "original_description": "رجل يشرب سيجارة",
+      "start": 7978.19
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 7997.54,
+      "id": 68,
+      "original_description": "beer",
+      "start": 7997.17
+    },
+    {
+      "action_type": "partial_blur",
+      "category": "substance abuse",
+      "end": 8001.42,
+      "id": 69,
+      "original_description": "سجارة",
+      "start": 7999.4,
+      "blur_region": {
+        "x": 0.208,
+        "y": 0.22,
+        "width": 0.336,
+        "height": 0.694
+      }
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 8273.45,
+      "id": 70,
+      "original_description": "crap",
+      "start": 8272.89
+    },
+    {
+      "action_type": "partial_blur",
+      "category": "substance abuse",
+      "end": 8279.41,
+      "id": 71,
+      "original_description": "رجل يشعل غليونا",
+      "start": 8274.98,
+      "blur_region": {
+        "x": 0.333,
+        "y": 0.518,
+        "width": 0.199,
+        "height": 0.217
+      }
+    },
+    {
+      "action_type": "partial_blur",
+      "category": "language",
+      "end": 8798.9,
+      "id": 72,
+      "original_description": "idiot",
+      "start": 8797.93,
+      "blur_region": {
+        "x": 0.482,
+        "y": 0.654,
+        "width": 0.208,
+        "height": 0.232
+      }
+    },
+    {
+      "action_type": "partial_blur",
+      "category": "substance abuse",
+      "end": 8848.47,
+      "id": 73,
+      "original_description": "شخص في يده سيجارة",
+      "start": 8816.75,
+      "blur_region": {
+        "x": 0.482,
+        "y": 0.654,
+        "width": 0.208,
+        "height": 0.232
+      }
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 9330.13,
+      "id": 74,
+      "original_description": "fucking",
+      "start": 9329.66
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 9339.97,
+      "id": 75,
+      "original_description": "goddamn",
+      "start": 9339.43
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 9431.53,
+      "id": 76,
+      "original_description": "fool",
+      "start": 9430.84
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 9702.42,
+      "id": 77,
+      "original_description": "damn",
+      "start": 9702.14
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 9707.41,
+      "id": 78,
+      "original_description": "hell",
+      "start": 9706.53
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 9720.72,
+      "id": 79,
+      "original_description": "goddamn",
+      "start": 9720.06
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 9913.21,
+      "id": 80,
+      "original_description": "fuckin'",
+      "start": 9912.7
+    },
+    {
+      "action_type": "skip",
+      "category": "violence",
+      "end": 9978.06,
+      "id": 81,
+      "original_description": "وجه يتبدد من الانفجار",
+      "start": 9974.06
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 10060.35,
+      "id": 82,
+      "original_description": "fucking",
+      "start": 10059.9
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 10221.85,
+      "id": 83,
+      "original_description": "goddamn",
+      "start": 10220.29
+    }
+  ],
+  "genre": "دراما, تاريخ, حرب",
+  "pg": "+16",
+  "platforms": {
+    "stremio": {
+      "id": "tt15398776",
+      "url": "https://web.stremio.com/#/detail/movie/tt15398776/tt15398776"
+    }
+  },
+  "poster_url": "https://image.tmdb.org/t/p/w342/miFcvcpi7L5QVs5o29hlreSPzVi.jpg",
+  "title": "Oppenheimer",
+  "type": "movie",
+  "year": 2023
+}
