@@ -92,6 +92,8 @@
   .st-pick-box{position:fixed;border:2px dashed #22d3ee;background:rgba(34,211,238,.18);display:none;pointer-events:none;box-sizing:border-box;z-index:6;}
   .st-pick-panel{position:absolute;top:12px;right:12px;z-index:7;background:rgba(15,23,42,.94);color:#fff;font:600 13px/1.7 Tahoma,Arial;padding:10px 14px;border-radius:10px;max-width:340px;direction:rtl;text-align:right;cursor:default;}
   .st-pick-panel button{margin:6px 0 0 6px;padding:4px 10px;font-size:12px;}
+  .st-cap{position:absolute;z-index:6;pointer-events:none;text-align:center;display:none;font-family:'Cairo',sans-serif;font-weight:600;color:#fff;line-height:1.45;unicode-bidi:plaintext;}
+  .st-cap span{background:rgba(0,0,0,.65);padding:1px 8px;border-radius:3px;-webkit-box-decoration-break:clone;box-decoration-break:clone;}
   .st-player video::cue, .st-stage video::cue{font-family:'Cairo',sans-serif;font-size:1.15em;font-weight:600;background:rgba(0,0,0,.65);}
   .st-bar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:8px;}
   .st-bar button{padding:6px 10px;}
@@ -308,21 +310,6 @@
         <button class="full primary small" id="applySyncBtn" style="margin-top:6px;" disabled>Apply sync</button>
       </div>
 
-      <div class="panel">
-        <h3>Timing padding</h3>
-        <p style="font-size:11.5px;color:var(--ink-faint);line-height:1.6;margin:0 0 10px;">The word-timing estimate is approximate. Add a small buffer before/after each detected word so the mute window still covers it even if the estimate lands a bit early or late.</p>
-        <div style="display:flex;gap:8px;">
-          <div style="flex:1;">
-            <label style="font-size:9.5px;color:var(--ink-faint);font-family:'IBM Plex Mono',monospace;">Before (s)</label>
-            <input type="number" step="0.05" min="0" id="padBefore" value="0.5" style="width:100%;background:var(--panel-alt);border:1px solid var(--line);color:var(--ink);padding:6px 7px;border-radius:2px;font-family:'IBM Plex Mono',monospace;font-size:12px;outline:none;">
-          </div>
-          <div style="flex:1;">
-            <label style="font-size:9.5px;color:var(--ink-faint);font-family:'IBM Plex Mono',monospace;">After (s)</label>
-            <input type="number" step="0.05" min="0" id="padAfter" value="0.2" style="width:100%;background:var(--panel-alt);border:1px solid var(--line);color:var(--ink);padding:6px 7px;border-radius:2px;font-family:'IBM Plex Mono',monospace;font-size:12px;outline:none;">
-          </div>
-        </div>
-        <p class="hint">Applied to Language/mute rows only, next time you hit "Process subtitles". Capped so it never crosses into the previous/next line.</p>
-      </div>
 
       <div class="panel">
         <h3>Exact word timing (audio)</h3>
@@ -400,6 +387,7 @@
           <div id="stPickBox" class="st-pick-box"></div>
           <div id="stPickPanel" class="st-pick-panel" style="display:none;"></div>
           <div id="stRegion" style="position:absolute;display:none;backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);background:rgba(0,0,0,.15);pointer-events:none;"></div>
+          <div id="stCap" class="st-cap"></div>
           <div id="stBadge" style="position:absolute;top:10px;left:10px;display:none;background:rgba(0,0,0,.75);color:#fff;padding:5px 10px;border-radius:8px;font:600 13px Inter,sans-serif;pointer-events:none;"></div>
         </div>
         <div class="st-bar">
@@ -427,7 +415,8 @@
 
       <div class="action-bar">
         <div class="left-actions">
-          <button id="addRowBtn" class="small">+ Add row manually</button>
+          <button id="addRowBtn" class="small" title="New row right after the last one (10 s long)">+ Add row</button>
+          <button id="addVideoRowBtn" class="small" title="New row starting at the video's current time (10 s long)">+ Add video time</button>
         </div>
         <div class="count-note" id="rowCount"></div>
         <div class="right-actions">

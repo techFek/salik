@@ -151,8 +151,6 @@
     cleanerActions: document.getElementById('cleanerActions'),
     cleanerDownloadBtn: document.getElementById('cleanerDownloadBtn'),
     cleanerUseBtn: document.getElementById('cleanerUseBtn'),
-    padBefore: document.getElementById('padBefore'),
-    padAfter: document.getElementById('padAfter'),
     clearSessionBtn: document.getElementById('clearSessionBtn'),
     anchorList: document.getElementById('anchorList'),
     anchorOrig: document.getElementById('anchorOrig'),
@@ -407,8 +405,6 @@
     const singleWords = new Set(parseListTextarea('listSingle').map(w=>normalizeToken(w)));
     const phrases = parseListTextarea('listPhrase').map(p=>normalizeToken(p));
     const suggestivePatterns = parseListTextarea('listSuggestive');
-    const padBefore = Math.max(0, parseFloat(els.padBefore.value) || 0);
-    const padAfter = Math.max(0, parseFloat(els.padAfter.value) || 0);
     let suggestiveRegexes = [];
     try{
       suggestiveRegexes = suggestivePatterns.map(p=>new RegExp(p,'iu'));
@@ -458,9 +454,9 @@
 
       const duration = sub.end - sub.start;
       const timings = weightedTimings(words, sub.start, duration, pauseAfter);
-      // clamp padded mute windows so they never cross into the previous/next line
-      const padStart = t => Math.max(sub.start, t - padBefore);
-      const padEnd = t => Math.min(sub.end, t + padAfter);
+      // mute windows stay inside their subtitle line
+      const padStart = t => Math.max(sub.start, t);
+      const padEnd = t => Math.min(sub.end, t);
 
       // 1) single-word profanity
       for(const t of timings){
@@ -920,21 +916,26 @@
   /* =========================================================
      MANUAL ADD ROW
   ========================================================== */
-  els.addRowBtn.addEventListener('click', ()=>{
-    let base;
-    if(rows.length){
-      base = rows.reduce((max,r)=>Math.max(max, r.end), 0) + 1;
-    }else{
-      base = subs.length ? subs[0].start : 0;
-    }
-    const newRow = makeRow(base, base+1, 'language', '', 'mute', '');
+  /* A new row is 10 s long: "Add row" starts it where the last row ends, "Add video time" at the player's time. */
+  const NEW_ROW_LEN = 10;
+  function addRowAt(start){
+    start = Math.max(0, Math.round(start * 1000) / 1000);
+    const newRow = makeRow(start, start + NEW_ROW_LEN, 'language', '', 'mute', '');
     rows.push(newRow);
     rows.sort((a,b)=>a.start-b.start);
     render();
     hasUnsavedChanges = true;
     persist();
     focusRow(newRow.uid);
-    toast('Row added — edit it directly in the table.');
+    toast(`Row added at ${fmtTime(start)} — edit it directly in the table.`);
+  }
+  els.addRowBtn.addEventListener('click', ()=>{
+    addRowAt(rows.length ? rows.reduce((max,r)=>Math.max(max, r.end), 0) : (subs.length ? subs[0].start : 0));
+  });
+  document.getElementById('addVideoRowBtn').addEventListener('click', ()=>{
+    const v = stEls.video;
+    if(!v.src){ toast('Open the video first (or connect the platform tab).'); return; }
+    addRowAt(v.currentTime || 0);
   });
 
   /* =========================================================
@@ -1028,8 +1029,6 @@
       listSingle: document.getElementById('listSingle').value,
       listPhrase: document.getElementById('listPhrase').value,
       listSuggestive: document.getElementById('listSuggestive').value,
-      padBefore: els.padBefore.value,
-      padAfter: els.padAfter.value,
       currentFilter, sortDir,
       stremio: (typeof stCollect === 'function') ? (() => { try{ return stCollect(); }catch(e){ return null; } })() : null
     };
@@ -1045,8 +1044,6 @@
     if(state.listSingle) document.getElementById('listSingle').value = state.listSingle;
     if(state.listPhrase) document.getElementById('listPhrase').value = state.listPhrase;
     if(state.listSuggestive) document.getElementById('listSuggestive').value = state.listSuggestive;
-    if(state.padBefore !== undefined) els.padBefore.value = state.padBefore;
-    if(state.padAfter !== undefined) els.padAfter.value = state.padAfter;
     currentFilter = state.currentFilter || 'all';
     sortDir = state.sortDir || 'asc';
     els.processBtn.disabled = subs.length===0;
@@ -1626,8 +1623,38 @@
     const t = document.createElement('track');
     t.kind = 'subtitles'; t.srclang = want; t.label = want === 'ar' ? 'العربية' : 'English'; t.src = stTracks[want]; t.default = true;
     v.appendChild(t);
-    t.addEventListener('load', () => { t.track.mode = 'showing'; });
-    setTimeout(() => { if(t.track) t.track.mode = 'showing'; }, 50);
+    // drawn by stCap (above the blur), not by the browser (the blur would cover it)
+    const hide = () => { if(t.track && t.track.mode !== 'hidden') t.track.mode = 'hidden'; };
+    t.addEventListener('load', () => { hide(); stShowCue(); });
+    setTimeout(hide, 50);
+    t.track.addEventListener('cuechange', stShowCue);
+  }
+
+  const stCap = document.getElementById('stCap');
+  function stShowCue(){
+    const v = stEls.video;
+    const tr = v.querySelector && v.querySelector('track');
+    const cues = tr && tr.track && tr.track.activeCues ? [...tr.track.activeCues] : [];
+    const text = cues.map(c => c.text).join('\n').replace(/<[^>]*>/g, '').trim();
+    if(!text || stEls.track.value === 'off'){ stCap.style.display = 'none'; stCap.dataset.text = ''; return; }
+    if(stCap.dataset.text !== text){
+      stCap.dataset.text = text;
+      stCap.innerHTML = text.split('\n').map(l => `<span>${escapeHtmlSafe(l)}</span>`).join('<br>');
+    }
+    stCap.style.display = 'block';
+    stPlaceCap();
+  }
+  function stPlaceCap(){
+    if(stCap.style.display === 'none') return;
+    const v = stLocalVideo0;
+    const w = v.clientWidth, h = v.clientHeight;
+    if(!w || !h) return;
+    // the picture inside the <video> box (letterboxed when the ratios differ)
+    const ar = v.videoWidth && v.videoHeight ? v.videoWidth / v.videoHeight : w / h;
+    const ph = Math.min(h, w / ar), pTop = v.offsetTop + (h - ph) / 2;
+    Object.assign(stCap.style, { left: (v.offsetLeft + w * 0.05) + 'px', width: (w * 0.9) + 'px',
+      top: 'auto', bottom: (v.offsetParent ? v.offsetParent.clientHeight - (pTop + ph) + ph * 0.06 + 34 : 40) + 'px',
+      fontSize: Math.max(14, Math.round(ph * 0.05)) + 'px' });
   }
 
   stEls.fetch.addEventListener('click', stFetchSubs);
@@ -1665,6 +1692,11 @@
     stEls.err.textContent = "The browser can't play this stream (usually AC3/EAC3 audio or HEVC video). In Stremio pick an x264 / H.264 stream with AAC audio.";
   });
   stEls.video.addEventListener('timeupdate', () => { if(stStopAt !== null && stEls.video.currentTime >= stStopAt){ stEls.video.pause(); stStopAt = null; } });
+  const stLocalVideo0 = stEls.video;
+  window.addEventListener('resize', stPlaceCap);
+  document.addEventListener('fullscreenchange', () => setTimeout(stPlaceCap, 100));
+  stLocalVideo0.addEventListener('loadedmetadata', stPlaceCap);
+  stEls.track.addEventListener('change', stShowCue);
   (function stTick(){ stEls.clock.textContent = fmtSrtTime(stEls.video.currentTime || 0).replace(',', '.'); requestAnimationFrame(stTick); })();
 
   function stStep(d){ const v = stEls.video; if(!v.src) return; v.pause(); stStopAt = null; v.currentTime = Math.max(0, v.currentTime + d); }
@@ -2024,8 +2056,6 @@
   document.getElementById('listSingle').addEventListener('change', persist);
   document.getElementById('listPhrase').addEventListener('change', persist);
   document.getElementById('listSuggestive').addEventListener('change', persist);
-  els.padBefore.addEventListener('change', persist);
-  els.padAfter.addEventListener('change', persist);
 
   /* =========================================================
      SAVE / LOAD PROJECT FILE — the reliable way to keep your
