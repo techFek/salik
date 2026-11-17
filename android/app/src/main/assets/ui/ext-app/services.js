@@ -223,6 +223,16 @@ export async function setCommunityUnverified(enabled) {
     } catch (e) { /* no tabs API here (app) */ }
 }
 
+/* Opens Salik's sync panel on the video in the active tab (release format, "here", ±½ s). */
+export async function openSyncPanel() {
+    try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (!tab) return false;
+        await new Promise((resolve) => chrome.tabs.sendMessage(tab.id, { type: "SALIK_SYNC_CMD", act: "open" }, () => { void chrome.runtime.lastError; resolve(); }));
+        return true;
+    } catch (e) { return false; /* no tabs API here (app) */ }
+}
+
 export async function getFilterSettings() {
     const [settings, community] = await Promise.all([readFilterSettings(), getCommunityUnverified()]);
     return Core.withCommunityFlag(settings, community);

@@ -197,6 +197,16 @@ function CommunityTimingsCard() {
         </div>`;
 }
 
+/* Timings out of step with this copy (another release, a PAL DVD, extra logos)? Open the sync panel on the video. */
+function SyncCard() {
+    return html`
+        <div class="card" style=${{ marginTop: "10px", padding: "10px 12px" }}>
+            <div style=${{ fontWeight: 600, marginBottom: "4px" }}>🔄 مزامنة التوقيتات</div>
+            <div style=${{ color: "#94a3b8", fontSize: "12px", marginBottom: "8px" }}>لو الفلاتر بتشتغل بدري أو متأخر: اختار نسخة الفيلم (Blu-ray، WEB-DL، DVD…) وزامن على لقطة.</div>
+            <button style=${{ width: "100%", padding: "8px", border: 0, borderRadius: "8px", background: "#1f8a5c", color: "#fff", cursor: "pointer", font: "inherit", fontWeight: 600 }} onClick=${async () => { await S.openSyncPanel(); window.close(); }}>افتح المزامنة على الفيديو</button>
+        </div>`;
+}
+
 function ControlTab({ currentItemDisplay, categorizedDetailed, filterSettings, onToggleGroup, onToggleSubcategory, itemKey, disabledMap, onToggleFilter, ratingTitle, durationMinutes, subtitleCensorEnabled, onToggleSubtitleCensor, ytAutoMuteEnabled, onToggleYtAutoMute, ytSkip, onToggleYtSkip }) {
     const groupKeys = ["nudity", "violence", "language", "substance"];
     return html`
@@ -210,6 +220,7 @@ function ControlTab({ currentItemDisplay, categorizedDetailed, filterSettings, o
                     ytAutoMuteEnabled=${ytAutoMuteEnabled} onToggleYtAutoMute=${onToggleYtAutoMute} />
             `)}
             ${ytSkip ? html`<${YouTubeSkipCard} ytSkip=${ytSkip} onToggle=${onToggleYtSkip} />` : null}
+            ${currentItemDisplay ? html`<${SyncCard} />` : null}
             <${CommunityTimingsCard} />
             <div class="rating-box">
                 <strong>${ratingTitle}</strong>

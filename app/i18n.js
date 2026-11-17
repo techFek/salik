@@ -2,6 +2,9 @@
 const DICT = {
     "التحكم": "Filters", "المنصات": "Platforms", "الحساب": "Account",
     "توقيتات المجتمع غير المراجعة": "Unreviewed community timings",
+    "🔄 مزامنة التوقيتات": "🔄 Sync the timings",
+    "لو الفلاتر بتشتغل بدري أو متأخر: اختار نسخة الفيلم (Blu-ray، WEB-DL، DVD…) وزامن على لقطة.": "Filters early or late? Pick your copy's format (Blu-ray, WEB-DL, DVD…) and sync on a moment.",
+    "افتح المزامنة على الفيديو": "Open sync on the video",
     "مشاهد مستوردة من مشاريع أخرى (MovieContentFilter وVideoSkip) لم يراجعها أحد بعد؛ قد تكون غير دقيقة.": "Scenes imported from other projects (MovieContentFilter, VideoSkip) that nobody has reviewed yet; they may be inaccurate.",
     "عن سالك: مصادر البيانات": "About Salik: data sources",
     "نتفليكس": "Netflix", "أمازون": "Prime Video", "يانجو": "Yango Play", "ديزني+": "Disney+", "شاهد": "Shahid",

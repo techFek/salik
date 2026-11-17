@@ -237,12 +237,52 @@
      * A sync the viewer already did (hasUserOffset) always counts as ok.
      */
     const SYNC_OFFER_S = 2, SYNC_MISMATCH_S = 60;
-    function syncDecision(videoDuration, runtimeSec, hasUserOffset) {
-        const d = Number(videoDuration), r = Number(runtimeSec);
+    function syncDecision(videoDuration, runtimeSec, hasUserOffset, scale) {
+        const d = Number(videoDuration) * (Number(scale) > 0 ? Number(scale) : 1), r = Number(runtimeSec);
         if (hasUserOffset || !(d > 0) || !isFinite(d) || !(r > 0)) return { status: "ok", diff: 0 };
         const diff = d - r;
         const abs = Math.abs(diff);
         return { status: abs > SYNC_MISMATCH_S ? "mismatch" : abs > SYNC_OFFER_S ? "offer" : "ok", diff: Math.round(diff * 10) / 10 };
+    }
+
+    /*
+     * Release formats. A film runs at 23.976 fps on Blu-ray, WEB-DL and NTSC DVD, so their timings match
+     * (apart from a fixed offset: logos, intros, which the viewer syncs once). PAL DVD / European TV plays
+     * the same frames at 25 fps: 4.1 % faster, so every time shrinks by 23.976/25 (≈ 4.7 min over 2 h).
+     *   timing seconds = video seconds × releaseScale(timingsRelease, viewerRelease) + offset
+     */
+    const NTSC_FILM = 24000 / 1001;
+    const RELEASES = {
+        webdl:    { fps: NTSC_FILM, ar: "WEB-DL / WEBRip / منصة بث", en: "WEB-DL / WEBRip / streaming" },
+        bluray:   { fps: NTSC_FILM, ar: "Blu-ray / BDRip / BRRip", en: "Blu-ray / BDRip / BRRip" },
+        bluray24: { fps: 24,        ar: "Blu-ray بسرعة 24.000", en: "Blu-ray at 24.000 fps" },
+        dvd_ntsc: { fps: NTSC_FILM, ar: "DVD أمريكي (NTSC)", en: "DVD (NTSC)" },
+        dvd_pal:  { fps: 25,        ar: "DVD / تلفزيون أوروبي (PAL 25)", en: "DVD / TV (PAL, 25 fps)" }
+    };
+    const RELEASE_KEYS = Object.keys(RELEASES);
+    function normalizeRelease(r) {
+        const k = String(r || "").toLowerCase().replace(/[\s.-]+/g, "");
+        if (RELEASES[r]) return r;
+        if (/pal|25fps/.test(k)) return "dvd_pal";
+        if (/ntsc|dvd/.test(k)) return "dvd_ntsc";
+        if (/24000|24fps/.test(k)) return "bluray24";
+        if (/blu|bdrip|brrip|bdremux|remux|uhd/.test(k)) return "bluray";
+        return "webdl";
+    }
+    function releaseScale(timingsRelease, viewerRelease) {
+        return RELEASES[normalizeRelease(viewerRelease)].fps / RELEASES[normalizeRelease(timingsRelease)].fps;
+    }
+    /* Only the 25 fps speed-up is big enough to recognise from the length alone. */
+    function guessRelease(videoDuration, runtimeSec, timingsRelease) {
+        const d = Number(videoDuration), r = Number(runtimeSec);
+        if (!(d > 0) || !(r > 0) || !isFinite(d)) return null;
+        const src = normalizeRelease(timingsRelease);
+        if (Math.abs(d - r) <= SYNC_MISMATCH_S) return null;
+        for (const k of RELEASE_KEYS) {
+            if (RELEASES[k].fps === RELEASES[src].fps) continue;
+            if (Math.abs(d * releaseScale(src, k) - r) <= SYNC_OFFER_S * 10) return k;
+        }
+        return null;
     }
 
     function buildDefaultSettings() {
@@ -661,6 +701,7 @@
         normalizeToGroupKey, groupsOf, normalizeArabic, buildHaystack,
         keywordInText, keywordMatches, matchSubcategory, classify, matchAllSubcategories, belongsOnlyTo,
         isUnverifiedAllowed, withCommunityFlag, syncDecision, SYNC_OFFER_S, SYNC_MISMATCH_S,
+        RELEASES, RELEASE_KEYS, normalizeRelease, releaseScale, guessRelease,
         shouldFilter, buildDefaultSettings, categorizeFiltersDetailed, categorizeFilters,
         titleGroupStates, toggleTitleGroupStore, subtitleCategoryEnabled,
         timing, actionOf, resolveActiveFilters, createMuteArbiter, validateLibrary,

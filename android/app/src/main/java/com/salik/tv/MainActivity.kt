@@ -346,6 +346,7 @@ class MainActivity : Activity() {
         val t = { ar: String, en: String -> Lang.t(this, ar, en) }
         val items = arrayOf(
             t("العودة إلى الرئيسية", "Back to home"),
+            t("مزامنة توقيت الفلاتر", "Sync the filter timings"),
             t("إرسال سجل التشخيص", "Send diagnostic log"),
             if (engineEnabled) t("إيقاف محرك الفلترة مؤقتًا", "Turn off the filtering engine") else t("تشغيل محرك الفلترة", "Turn on the filtering engine"),
             t("إغلاق التطبيق", "Exit app")
@@ -355,13 +356,80 @@ class MainActivity : Activity() {
             .setItems(items) { _, which ->
                 when (which) {
                     0 -> finish()
-                    1 -> shareDiagnosticLog(this)
-                    2 -> {
+                    1 -> showSyncDialog()
+                    2 -> shareDiagnosticLog(this)
+                    3 -> {
                         settings.edit().putBoolean("engineEnabled", !engineEnabled).commit()
                         recreate()
                     }
-                    3 -> finishAffinity()
+                    4 -> finishAffinity()
                 }
+            }
+            .setNegativeButton(t("رجوع", "Back"), null)
+            .show()
+    }
+
+    /**
+     * Sync with the release the timings were made on, as a native list (easy with a TV remote).
+     * The engine (isolated.script.js) publishes what it knows in chrome.storage.local "salikSyncState"
+     * and takes the commands as a SALIK_SYNC_CMD runtime message.
+     */
+    private fun showSyncDialog() {
+        val t = { ar: String, en: String -> Lang.t(this, ar, en) }
+        val en = Lang.isEnglish(this)
+        val b = bridge
+        val st = b?.readLocal("salikSyncState") as? org.json.JSONObject
+        if (b == null || st == null) {
+            AlertDialog.Builder(this).setTitle(t("مزامنة سالك", "Salik sync"))
+                .setMessage(t("شغّل فيلمًا له توقيتات في سالك أولًا، ثم افتح المزامنة.", "Play a title that has Salik timings first, then open sync."))
+                .setPositiveButton(t("حسنًا", "OK"), null).show()
+            return
+        }
+        val send = { act: String, value: String? ->
+            b.broadcastRuntime(org.json.JSONObject().put("type", "SALIK_SYNC_CMD").put("act", act).put("value", value ?: org.json.JSONObject.NULL))
+        }
+        val releases = st.optJSONArray("releases") ?: org.json.JSONArray()
+        fun relName(key: String?): String {
+            for (i in 0 until releases.length()) {
+                val r = releases.getJSONObject(i)
+                if (r.optString("key") == key) return r.optString(if (en) "en" else "ar")
+            }
+            return key ?: ""
+        }
+        val chosen = st.optString("release").takeIf { it.isNotEmpty() && it != "null" }
+        val auto = st.optString("autoRelease").takeIf { it.isNotEmpty() && it != "null" }
+        val ref = st.optJSONObject("reference")
+        val offset = st.opt("offset").let { if (it is Number) it.toDouble() else null }
+        fun clock(sec: Double): String {
+            val s = sec.toLong().coerceAtLeast(0); val h = s / 3600; val m = (s % 3600) / 60; val r = s % 60
+            return if (h > 0) "%d:%02d:%02d".format(h, m, r) else "%d:%02d".format(m, r)
+        }
+        val actions = mutableListOf<Pair<String, () -> Unit>>()
+        actions += t("نسخة الفيلم: ", "Your copy: ") + (chosen?.let { relName(it) } ?: auto?.let { t("تلقائي — ", "auto — ") + relName(it) } ?: t("زي نسخة التوقيتات", "same as the timings")) to { showReleaseDialog(releases, chosen, send) }
+        if (ref != null) actions += t("هنا = ", "Here = ") + ref.optString("desc").take(60) + " (" + clock(ref.optDouble("time")) + ")" to { send("here", null) }
+        actions += t("الفلاتر أبكر ½ ث", "Filters ½ s earlier") to { send("earlier", null) }
+        actions += t("الفلاتر أبطأ ½ ث", "Filters ½ s later") to { send("later", null) }
+        if (offset != null || chosen != null) actions += t("إلغاء المزامنة", "Reset sync") to { send("reset", null) }
+        val msg = t("التوقيتات معمولة على: ", "Timings made on: ") + relName(st.optString("timingsRelease")) +
+            (offset?.let { t("\nالإزاحة الحالية: ", "\nCurrent offset: ") + it + t(" ث", " s") } ?: "") +
+            (ref?.let { t("\nلـ «هنا»: وقّف الفيلم على اللقطة دي الأول.", "\nFor \"Here\": pause the film on that moment first.") } ?: "")
+        AlertDialog.Builder(this)
+            .setTitle(t("مزامنة سالك", "Salik sync") + " — " + msg)
+            .setItems(actions.map { it.first }.toTypedArray()) { _, which -> actions[which].second() }
+            .setNegativeButton(t("رجوع", "Back"), null)
+            .show()
+    }
+
+    private fun showReleaseDialog(releases: org.json.JSONArray, chosen: String?, send: (String, String?) -> Unit) {
+        val t = { ar: String, en: String -> Lang.t(this, ar, en) }
+        val en = Lang.isEnglish(this)
+        val keys = listOf<String?>(null) + (0 until releases.length()).map { releases.getJSONObject(it).optString("key") }
+        val names = listOf(t("تلقائي / زي نسخة التوقيتات", "Auto / same as the timings")) +
+            (0 until releases.length()).map { releases.getJSONObject(it).optString(if (en) "en" else "ar") }
+        AlertDialog.Builder(this)
+            .setTitle(t("نسخة الفيلم اللي بتتفرج عليها", "The copy you are watching"))
+            .setSingleChoiceItems(names.toTypedArray(), keys.indexOf(chosen).coerceAtLeast(0)) { d, which ->
+                send("release", keys[which]); d.dismiss()
             }
             .setNegativeButton(t("رجوع", "Back"), null)
             .show()

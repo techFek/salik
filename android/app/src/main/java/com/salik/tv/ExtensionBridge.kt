@@ -152,6 +152,9 @@ class ExtensionBridge(
 
     private fun prefKey(area: String, key: String) = "$area::$key"
 
+    /** A value the extension scripts saved in chrome.storage.local (e.g. salikSyncState for the sync dialog). */
+    fun readLocal(key: String): Any? = readValue("local", key)
+
     private fun readValue(area: String, key: String): Any? =
         storage.getString(prefKey(area, key), null)?.let { runCatching { JSONArray(it).get(0) }.getOrNull() }
 

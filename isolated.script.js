@@ -513,22 +513,52 @@ function brainLoop(timestamp) {
 }
 
 
-/* ---------- Sync with the release the timings were made on (per title and platform, saved on this device) ---------- */
+/* ---------- Sync with the release the timings were made on (per title and platform, saved on this device) ----------
+ * timing seconds = player seconds × scale + offset
+ *   scale  from the release formats (NazafaCore.releaseScale): 1 for Blu-ray ↔ WEB-DL, 25/23.976 for a PAL copy
+ *   offset from the viewer's sync ("here" on the reference moment, ±½ s), else the library's offset_seconds
+ */
 
 let nazafaUserOffsets = {};
-chrome.storage.local.get(['salikPlatformOffsets'], (res) => { nazafaUserOffsets = res.salikPlatformOffsets || {}; });
+let nazafaUserReleases = {};
+chrome.storage.local.get(['salikPlatformOffsets', 'salikPlatformReleases'], (res) => {
+    nazafaUserOffsets = res.salikPlatformOffsets || {};
+    nazafaUserReleases = res.salikPlatformReleases || {};
+});
+
+function nazafaPerTitle(store, platform) {
+    const v = currentLibraryKey && store[currentLibraryKey] && store[currentLibraryKey][platform];
+    return v === undefined ? null : v;
+}
 
 function nazafaUserOffset(platform) {
-    const v = currentLibraryKey && nazafaUserOffsets[currentLibraryKey] && nazafaUserOffsets[currentLibraryKey][platform];
+    const v = nazafaPerTitle(nazafaUserOffsets, platform);
     return typeof v === "number" && isFinite(v) ? v : null;
 }
 
-function nazafaSaveUserOffset(platform, value) {
+function nazafaUserRelease(platform) {
+    const v = nazafaPerTitle(nazafaUserReleases, platform);
+    return v && NazafaCore.RELEASES[v] ? v : null;
+}
+
+function nazafaSavePerTitle(storeName, platform, value) {
     if (!currentLibraryKey) return;
-    const per = Object.assign({}, nazafaUserOffsets[currentLibraryKey] || {});
-    if (value === null) delete per[platform]; else per[platform] = Math.round(value * 100) / 100;
-    nazafaUserOffsets = Object.assign({}, nazafaUserOffsets, { [currentLibraryKey]: per });
-    try { chrome.storage.local.set({ salikPlatformOffsets: nazafaUserOffsets }); } catch (e) {}
+    const store = storeName === "salikPlatformOffsets" ? nazafaUserOffsets : nazafaUserReleases;
+    const per = Object.assign({}, store[currentLibraryKey] || {});
+    if (value === null) delete per[platform]; else per[platform] = value;
+    const next = Object.assign({}, store, { [currentLibraryKey]: per });
+    if (storeName === "salikPlatformOffsets") nazafaUserOffsets = next; else nazafaUserReleases = next;
+    try { chrome.storage.local.set({ [storeName]: next }); } catch (e) {}
+}
+
+function nazafaSaveUserOffset(platform, value) {
+    nazafaSavePerTitle("salikPlatformOffsets", platform, value === null ? null : Math.round(value * 100) / 100);
+}
+
+/* The release the timings were made on: the platform entry's, else the item's, else WEB-DL / streaming. */
+function nazafaTimingsRelease(platform) {
+    const p = currentItemPlatforms && currentItemPlatforms[platform];
+    return NazafaCore.normalizeRelease((p && p.release) || (currentItemSync && currentItemSync.release) || "webdl");
 }
 
 /* The moment to sync on: the release's reference (MCF start, VideoSkip screenshot), else the first described scene. */
@@ -541,6 +571,8 @@ function nazafaSyncReference() {
 let nazafaSyncEl = null;
 let nazafaSyncOpen = false;
 let nazafaSyncDismissedFor = null;
+/* What the engine used last: the player's own position (before scale and offset), and the sync in force. */
+let nazafaSyncNow = { pos: null, platform: null, scale: 1, offset: 0, release: "webdl", autoRelease: null };
 
 function nazafaFmtClock(t) {
     t = Math.max(0, Math.floor(t));
@@ -548,7 +580,45 @@ function nazafaFmtClock(t) {
     return h ? `${h}:${String(m).padStart(2, "0")}:${s}` : `${m}:${s}`;
 }
 
-function nazafaSyncUi(state, video, platform, offset) {
+/* Every sync action, from the panel on the video, the extension popup or the Android menu. */
+function nazafaSyncCommand(act, value) {
+    const platform = nazafaSyncNow.platform || detectPlatform();
+    const offset = nazafaUserOffset(platform) ?? nazafaSyncNow.offset;
+    const ref = nazafaSyncReference();
+    if (act === "open") { nazafaSyncOpen = true; nazafaSyncDismissedFor = null; }
+    if (act === "here" && ref && nazafaSyncNow.pos !== null) { nazafaSaveUserOffset(platform, ref.time - nazafaSyncNow.pos * nazafaSyncNow.scale); nazafaSyncOpen = false; }
+    // "earlier" = the filters act sooner (the video runs ahead of the timings)
+    if (act === "earlier") nazafaSaveUserOffset(platform, offset + 0.5);
+    if (act === "later") nazafaSaveUserOffset(platform, offset - 0.5);
+    if (act === "release") nazafaSavePerTitle("salikPlatformReleases", platform, NazafaCore.RELEASES[value] ? value : null);
+    if (act === "reset") { nazafaSaveUserOffset(platform, null); nazafaSavePerTitle("salikPlatformReleases", platform, null); }
+    if (act === "close") { nazafaSyncOpen = false; nazafaSyncDismissedFor = currentLibraryKey + "|" + platform; }
+    if (nazafaSyncEl) nazafaSyncEl.dataset.render = "";
+}
+
+chrome.runtime.onMessage.addListener((request) => {
+    if (request && request.type === "SALIK_SYNC_CMD" && window === window.top) nazafaSyncCommand(request.act, request.value);
+});
+
+/* The Android menu shows its own sync dialog (easier with a remote): it reads this. */
+let nazafaSyncPublished = "";
+function nazafaPublishSyncState(platform) {
+    if (window !== window.top) return;
+    const ref = nazafaSyncReference();
+    const st = currentLibraryKey ? {
+        title: currentLibraryKey, platform,
+        reference: ref ? { time: ref.time, desc: String(ref.desc || "").slice(0, 160) } : null,
+        offset: nazafaUserOffset(platform), release: nazafaUserRelease(platform),
+        autoRelease: nazafaSyncNow.autoRelease, timingsRelease: nazafaTimingsRelease(platform),
+        releases: NazafaCore.RELEASE_KEYS.map((k) => ({ key: k, ar: NazafaCore.RELEASES[k].ar, en: NazafaCore.RELEASES[k].en }))
+    } : null;
+    const text = JSON.stringify(st);
+    if (text === nazafaSyncPublished) return;
+    nazafaSyncPublished = text;
+    try { chrome.storage.local.set({ salikSyncState: st }); } catch (e) {}
+}
+
+function nazafaSyncUi(state, platform) {
     const key = currentLibraryKey + "|" + platform;
     const want = (state.status !== "ok" || nazafaSyncOpen) && nazafaSyncDismissedFor !== key;
     if (!want) { if (nazafaSyncEl) { nazafaSyncEl.remove(); nazafaSyncEl = null; } return; }
@@ -556,36 +626,39 @@ function nazafaSyncUi(state, video, platform, offset) {
     if (!nazafaSyncEl) {
         nazafaSyncEl = document.createElement("div");
         nazafaSyncEl.setAttribute("dir", "rtl");
-        nazafaSyncEl.style.cssText = "position:fixed;bottom:90px;right:20px;z-index:2147483647;max-width:360px;background:rgba(15,23,20,.92);color:#fff;" +
+        nazafaSyncEl.style.cssText = "position:fixed;bottom:90px;right:20px;z-index:2147483647;max-width:380px;background:rgba(15,23,20,.92);color:#fff;" +
             "font:14px/1.6 Tajawal,Segoe UI,sans-serif;padding:10px 12px;border-radius:12px;box-shadow:0 4px 18px rgba(0,0,0,.4);";
         nazafaSyncEl.addEventListener("click", (e) => {
             const b = e.target.closest("button");
             if (!b) return;
             e.stopPropagation();
-            const v = getActiveVideoElement();
-            const ref = nazafaSyncReference();
-            if (b.dataset.act === "open") nazafaSyncOpen = true;
-            if (b.dataset.act === "here" && v && ref) { nazafaSaveUserOffset(platform, ref.time - v.currentTime); nazafaSyncOpen = false; }
-            // "earlier" = the filters act sooner (the video runs ahead of the timings)
-            if (b.dataset.act === "earlier") nazafaSaveUserOffset(platform, (nazafaUserOffset(platform) ?? offset) + 0.5);
-            if (b.dataset.act === "later") nazafaSaveUserOffset(platform, (nazafaUserOffset(platform) ?? offset) - 0.5);
-            if (b.dataset.act === "reset") nazafaSaveUserOffset(platform, null);
-            if (b.dataset.act === "close") { nazafaSyncOpen = false; nazafaSyncDismissedFor = key; }
-            nazafaSyncEl.dataset.render = "";
+            nazafaSyncCommand(b.dataset.act);
         }, true);
+        nazafaSyncEl.addEventListener("change", (e) => {
+            if (e.target.matches("select[data-act=release]")) nazafaSyncCommand("release", e.target.value || null);
+        }, true);
+        ["keydown", "keyup", "mousedown", "pointerdown"].forEach((ev) => nazafaSyncEl.addEventListener(ev, (e) => e.stopPropagation()));
     }
     if (nazafaSyncEl.parentNode !== host) host.appendChild(nazafaSyncEl);
     const ref = nazafaSyncReference();
     const btn = (act, label) => `<button data-act="${act}" style="margin:4px 0 0 6px;padding:4px 10px;border:0;border-radius:8px;background:#1f8a5c;color:#fff;cursor:pointer;font:inherit">${label}</button>`;
     const user = nazafaUserOffset(platform);
+    const rel = nazafaUserRelease(platform);
+    const auto = !rel && nazafaSyncNow.autoRelease;
+    const relSelect = `<div style="margin-top:6px">نسخة الفيلم عندك: <select data-act="release" style="font:inherit;border-radius:6px;padding:1px 4px;max-width:220px">` +
+        `<option value="">${auto ? "تلقائي: " + NazafaCore.RELEASES[auto].ar : "زي نسخة التوقيتات"}</option>` +
+        NazafaCore.RELEASE_KEYS.map((k) => `<option value="${k}"${rel === k ? " selected" : ""}>${NazafaCore.RELEASES[k].ar}</option>`).join("") +
+        `</select></div>` +
+        `<div style="opacity:.7;font-size:12px">التوقيتات معمولة على: ${NazafaCore.RELEASES[nazafaTimingsRelease(platform)].ar}` +
+        (Math.abs(nazafaSyncNow.scale - 1) > 1e-4 ? ` · السرعة ×${nazafaSyncNow.scale.toFixed(4)}` : "") + `</div>`;
     const html = !nazafaSyncOpen
         ? `🛡️ ${state.status === "mismatch" ? "نسخة هذا العمل مختلفة عن نسخة توقيتات سالك؛ الفلاتر متوقفة حتى تزامنها." : "مدة هذه النسخة تختلف عن نسخة التوقيتات بـ " + Math.abs(state.diff) + " ث."}<br>` +
           btn("open", "مزامنة") + btn("close", "إخفاء")
-        : `🛡️ <b>مزامنة سالك</b><br>` + (ref
+        : `🛡️ <b>مزامنة سالك</b>` + relSelect + (ref
             ? `شغّل الفيديو حتى هذه اللقطة ثم اضغط «هنا»:<br><i>${String(ref.desc || "").replace(/[<>&]/g, "")}</i><br><span style="opacity:.75">(عند ${nazafaFmtClock(ref.time)} في نسخة التوقيتات)</span><br>` + btn("here", "هنا")
             : "لا توجد لقطة مرجعية لهذا العمل.<br>") +
           btn("earlier", "أبكر ½ ث") + btn("later", "أبطأ ½ ث") +
-          (user !== null ? `<br><span style="opacity:.75">الإزاحة الحالية: ${user} ث</span>` + btn("reset", "إلغاء المزامنة") : "") + btn("close", "إغلاق");
+          (user !== null || rel ? `<br><span style="opacity:.75">${user !== null ? "الإزاحة الحالية: " + user + " ث" : ""}</span>` + btn("reset", "إلغاء المزامنة") : "") + btn("close", "إغلاق");
     if (nazafaSyncEl.dataset.render !== html) { nazafaSyncEl.innerHTML = html; nazafaSyncEl.dataset.render = html; }
 }
 
@@ -608,9 +681,14 @@ function processActiveFilters() {
         : (Number(currentItemPlatforms && currentItemPlatforms[platform] && currentItemPlatforms[platform].offset_seconds) || 0);
     const runtimeSec = (currentItemPlatforms && currentItemPlatforms[platform] && currentItemPlatforms[platform].runtime_sec)
         || (currentItemSync && currentItemSync.runtimeSec);
-    const syncState = NazafaCore.syncDecision(video.duration, runtimeSec, userOffset !== null);
-    nazafaSyncUi(syncState, video, platform, platformOffset);
-    if (syncState.status === "mismatch") { nazafaReleaseEngineState(); return; } // another cut: wait for the viewer to sync
+    const timingsRelease = nazafaTimingsRelease(platform);
+    const autoRelease = nazafaUserRelease(platform) ? null : NazafaCore.guessRelease(video.duration, runtimeSec, timingsRelease);
+    const viewerRelease = nazafaUserRelease(platform) || autoRelease || timingsRelease;
+    const scale = NazafaCore.releaseScale(timingsRelease, viewerRelease);
+    const syncState = NazafaCore.syncDecision(video.duration, runtimeSec, userOffset !== null, scale);
+    nazafaSyncNow = Object.assign(nazafaSyncNow, { platform, scale, offset: platformOffset, release: viewerRelease, autoRelease });
+    nazafaSyncUi(syncState, platform);
+    nazafaPublishSyncState(platform);
 
     const DISNEY_PLAYHEAD_MAX_AGE_MS = 6 * 60 * 60 * 1000;
     const hasFreshDisneyPlayhead = platform === "disney"
@@ -632,7 +710,7 @@ function processActiveFilters() {
 
     let time;
     if (hasLiveDisneyPosition) {
-        time = disneyLivePositionSeconds + platformOffset;
+        time = disneyLivePositionSeconds;
     } else if (hasFreshDisneyPlayhead) {
         const videoTimeDelta = (disneyPlayheadVideoTimeAtReceipt !== null)
             ? (video.currentTime - disneyPlayheadVideoTimeAtReceipt)
@@ -640,18 +718,21 @@ function processActiveFilters() {
         const canUseVideoDelta = videoTimeDelta !== null && videoTimeDelta >= -1.5;
 
         if (canUseVideoDelta) {
-            time = disneyPlayheadSeconds + Math.max(0, videoTimeDelta) + platformOffset;
+            time = disneyPlayheadSeconds + Math.max(0, videoTimeDelta);
         } else {
             const elapsedRealSeconds = (Date.now() - disneyPlayheadReceivedAt) / 1000;
             const rate = video.paused ? 0 : (video.playbackRate || 1);
-            time = disneyPlayheadSeconds + (elapsedRealSeconds * rate) + platformOffset;
+            time = disneyPlayheadSeconds + (elapsedRealSeconds * rate);
         }
 
         const DISNEY_TELEMETRY_LAG_COMPENSATION_SECONDS = 0;
         time += DISNEY_TELEMETRY_LAG_COMPENSATION_SECONDS;
     } else {
-        time = video.currentTime + platformOffset;
+        time = video.currentTime;
     }
+    nazafaSyncNow.pos = time;                 // the player's own clock
+    time = time * scale + platformOffset;     // → the timings' clock
+    if (syncState.status === "mismatch") { nazafaReleaseEngineState(); return; } // another cut: wait for the viewer to sync
 
 
     const resolved = NazafaCore.resolveActiveFilters(nazafaFilters, time, {
@@ -669,14 +750,15 @@ function processActiveFilters() {
     if (resolved.skip) {
         const targetEnd = NazafaCore.timing(resolved.skip).end;
         isExecutingAction = true;
-        const disneyDelta = (platform === "disney" ? targetEnd + 0.4 : targetEnd) - time;
-        broadcastToAllFrames({ type: "NAZAFA_EXECUTE_ACTION", action: "skip", targetTime: targetEnd - platformOffset, disneyDelta: disneyDelta, platform: platform });
+        const playerEnd = (targetEnd - platformOffset) / scale;   // back to the player's clock
+        const disneyDelta = (platform === "disney" ? playerEnd + 0.4 / scale : playerEnd) - nazafaSyncNow.pos;
+        broadcastToAllFrames({ type: "NAZAFA_EXECUTE_ACTION", action: "skip", targetTime: playerEnd, disneyDelta: disneyDelta, platform: platform });
 
         if (platform === "disney") {
-            disneyPlayheadSeconds = (targetEnd - platformOffset) + 0.75;
+            disneyPlayheadSeconds = playerEnd + 0.75;
             disneyPlayheadReceivedAt = Date.now();
             disneyPlayheadVideoTimeAtReceipt = video.currentTime + disneyDelta;
-            disneyLivePositionSeconds = (targetEnd - platformOffset) + 0.75;
+            disneyLivePositionSeconds = playerEnd + 0.75;
             disneyLivePositionReceivedAt = Date.now();
         }
 
