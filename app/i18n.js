@@ -60,7 +60,7 @@ const DICT = {
     "سوء أدب مع الله": "Disrespect to God", "شتائم": "Insults",
     "ألفاظ بذيئة": "Vulgar words", "إهانات بسيطة": "Mild insults",
     "ألفاظ جنسية": "Sexual language", "ألفاظ تعاطي": "Substance-related words",
-    "لقطات تعاطي ومسكرات": "Substance use scenes", "تدخين": "Smoking",
+    "مفاسد": "Vices", "تدخين": "Smoking",
     "كحول وخمور": "Alcohol", "مخدرات": "Drugs", "قمار ومراهنات": "Gambling",
     "خفيف": "Light", "متوسط": "Medium", "كثيف": "Heavy",
     "اللغة / Language": "Language / اللغة"

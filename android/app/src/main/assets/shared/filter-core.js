@@ -56,7 +56,7 @@
             ]
         },
         substance: {
-            label: "لقطات تعاطي ومسكرات",
+            label: "مفاسد",
             icon: "🚬",
             unitLabel: "مشهد",
             verb: "حجب",

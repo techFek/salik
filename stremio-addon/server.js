@@ -126,7 +126,7 @@ async function subtitles(cfg, type, id, extra, base) {
 
 function configurePage(base, cfg) {
     const c = cfg || Cfg.normalizeConfig({});
-    const groupNames = { nudity: "المشاهد الحساسة", violence: "العنف", language: "الألفاظ", substance: "التعاطي" };
+    const groupNames = { nudity: "المشاهد الحساسة", violence: "العنف", language: "الألفاظ", substance: "المفاسد" };
     const html = fs.readFileSync(path.join(__dirname, "configure.html"), "utf8")
         .replace("__BASE__", JSON.stringify(base))
         .replace("__CONFIG__", JSON.stringify(c))
