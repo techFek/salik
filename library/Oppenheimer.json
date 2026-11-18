@@ -24,7 +24,7 @@
       "category": "nudity",
       "end": 479.24,
       "id": 3,
-      "original_description": "امرأة عاريةة في الصور",
+      "original_description": "امرأة عارية في الصور",
       "start": 476.75
     },
     {
@@ -450,25 +450,20 @@
       "start": 4488.82
     },
     {
-      "action_type": "partial_blur",
+      "action_type": "skip",
       "category": "nudity",
       "end": 4579.75,
       "id": 47,
       "original_description": "sex: intercourse",
-      "start": 4541.7,
-      "blur_region": {
-        "x": 0.064,
-        "y": 0.444,
-        "width": 0.433,
-        "height": 0.455
-      }
+      "start": 4541.7
+      
     },
     {
       "action_type": "partial_blur",
       "category": "substance abuse",
       "end": 4911.47,
       "id": 48,
-      "original_description": "سيجارة فيد يد احدهم",
+      "original_description": "سيجارة في يد احدهم",
       "start": 4907.64,
       "blur_region": {
         "x": 0.064,
