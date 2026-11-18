@@ -1179,16 +1179,18 @@ window.addEventListener("message", (event) => {
     }
     else if (action === "mute") {
         // "subs": a word found in the subtitles; held apart so it never ends a library mute (and the reverse)
-        const holder = event.data.source === "subs" ? "subs" : "library";
+        const fromSubs = event.data.source === "subs";
         nazafaMuteContext(video, platform);
-        if (nazafaMute.holding(holder)) {
+        if (nazafaMute.holding(fromSubs ? "subs" : "library")) {
             nazafaMute.reassert();
             if (nazafaMute.weMuted && nazafaMuteIsNetflix()) setNetflixMuted(true);
-        } else nazafaMute.acquire(holder);
+        } else if (fromSubs) nazafaMute.acquire("subs");
+        else nazafaMute.acquire("library");
     }
     else if (action === "unmute") {
         nazafaMuteContext(video, platform);
-        nazafaMute.release(event.data.source === "subs" ? "subs" : "library");
+        if (event.data.source === "subs") nazafaMute.release("subs");
+        else nazafaMute.release("library");
     }
     else if (action === "blur") {
         if (video.dataset.nazafaBlurred !== "1") {
