@@ -4,7 +4,7 @@ const DICT = {
     "نتفليكس": "Netflix", "أمازون": "Prime Video", "يانجو": "Yango Play", "ديزني+": "Disney+", "شاهد": "Shahid",
     "واتش ات": "Watch It", "تود": "Tod", "يوتيوب": "YouTube",
     "لا يوجد": "None", "لا يوجد مشاهد من هذا النوع حالياً": "No scenes of this type",
-    "مشهد محجوب": "Filtered scene", "كتم الألفاظ التلقائي على يوتيوب": "Auto-mute bad language on YouTube", "يكتم الصوت لحظة نطق اللفظ الخارج في فيديوهات يوتيوب اعتماداً على ترجمتها": "Mutes the moment a bad word is spoken in YouTube videos, using their captions", "تشفير الترجمة النصية": "Subtitle censoring",
+    "مشهد محجوب": "Filtered scene", "كتم الألفاظ تلقائيًا من الترجمة": "Auto-mute bad language from the subtitles", "يكتم الصوت لحظة نطق اللفظ الخارج اعتمادًا على الترجمة المعروضة، على يوتيوب وكل المنصات (حتى الترجمة المدمجة أو المترجمة للعربي)": "Mutes the moment a bad word is spoken, using the subtitles on screen, on YouTube and every platform (embedded or translated subtitles too)", "تشفير الترجمة النصية": "Subtitle censoring",
     "يستبدل الألفاظ الممنوعة في نص الترجمة المعروض على الشاشة بالرموز": "Replaces inappropriate words in the on-screen subtitles with symbols",
     "مشاهد أخرى غير مصنّفة": "Other uncategorized scenes",
     "تخطي على يوتيوب": "Skip on YouTube", "إعلان مدفوع": "Paid sponsor", "تذكير بالاشتراك والإعجاب": "Subscribe / like reminder",

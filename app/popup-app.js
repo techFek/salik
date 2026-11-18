@@ -139,8 +139,8 @@ function CategoryCard({ catKey, groupData, groupSettings, onToggleGroup, onToggl
                     <${FeatureToggleRow} label="تشفير الترجمة النصية"
                         description="يستبدل الألفاظ الممنوعة في نص الترجمة المعروض على الشاشة بالرموز *&^"
                         enabled=${subtitleCensorEnabled} onToggle=${onToggleSubtitleCensor} />
-                    <${FeatureToggleRow} label="كتم الألفاظ التلقائي على يوتيوب"
-                        description="يكتم الصوت لحظة نطق اللفظ الخارج في فيديوهات يوتيوب اعتماداً على ترجمتها"
+                    <${FeatureToggleRow} label="كتم الألفاظ تلقائيًا من الترجمة"
+                        description="يكتم الصوت لحظة نطق اللفظ الخارج اعتمادًا على الترجمة المعروضة، على يوتيوب وكل المنصات (حتى الترجمة المدمجة أو المترجمة للعربي)"
                         enabled=${ytAutoMuteEnabled} onToggle=${onToggleYtAutoMute} />
                 ` : null}
                 ${groupData.subcategories.map((sub) => html`
