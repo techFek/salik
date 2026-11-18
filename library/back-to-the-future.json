@@ -1,0 +1,555 @@
+{
+  "addedAt": 1795031091916,
+  "category": "Hollywood",
+  "description": "أُعيد مراهق الثمانينيات مارتي ماكفلي بطريق الخطأ إلى عام 1955 ، مما أدى عن غير قصد إلى تعطيل الاجتماع الأول لوالديه وجذب اهتمام والدته العاطفي. يجب على مارتي إصلاح الضرر الذي لحق بالتاريخ من خلال إحياء الرومانسية بين والديه ، وبمساعدة صديقه المخترع غريب الأطوار دوك براون - يعود إلى عام 1985.",
+  "filters": [
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 190.93,
+      "id": 1,
+      "original_description": "profane",
+      "start": 190.33
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 193.35,
+      "id": 2,
+      "original_description": "profane",
+      "start": 192.65
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 197.94,
+      "id": 3,
+      "original_description": "profane: hell",
+      "start": 196.64
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 352.46,
+      "id": 4,
+      "original_description": "profane: damn",
+      "start": 350.75
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 576.99,
+      "id": 5,
+      "original_description": "profane: Jesus",
+      "start": 576.29
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 831.9,
+      "id": 6,
+      "original_description": "profane: butthead",
+      "start": 831.31
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 916.99,
+      "id": 7,
+      "original_description": "profane: G d*** it, but disciplined",
+      "start": 915.49
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 1240.91,
+      "id": 8,
+      "original_description": "profane: Jesus",
+      "start": 1239.91
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 1272.67,
+      "id": 9,
+      "original_description": "profane: s***",
+      "start": 1271.97
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 1347.29,
+      "id": 10,
+      "original_description": "profane: JC x 2",
+      "start": 1344.49
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 1357.04,
+      "id": 11,
+      "original_description": "profane: hell, important to story",
+      "start": 1356.58
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 1360.44,
+      "id": 12,
+      "original_description": "profane: hell, important to story",
+      "start": 1359.84
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 1449.71,
+      "id": 13,
+      "original_description": "profane: damn",
+      "start": 1448.74
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 1552.34,
+      "id": 14,
+      "original_description": "profane: My G",
+      "start": 1551.74
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 1727.98,
+      "id": 15,
+      "original_description": "profane: OMG",
+      "start": 1726.68
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 1742.05,
+      "id": 16,
+      "original_description": "profane: holy s***",
+      "start": 1739.99
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 1774.66,
+      "id": 17,
+      "original_description": "profane: bas****",
+      "start": 1773.05
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 1795.53,
+      "id": 18,
+      "original_description": "profane: damn",
+      "start": 1795.14
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 1845.46,
+      "id": 19,
+      "original_description": "profane: d*** it",
+      "start": 1844.64
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 1847.32,
+      "id": 20,
+      "original_description": "profane: J",
+      "start": 1846.42
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 1869.42,
+      "id": 21,
+      "original_description": "profane: s***",
+      "start": 1868.01
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 1871.72,
+      "id": 22,
+      "original_description": "profane: bas****",
+      "start": 1870.87
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 1992.79,
+      "id": 23,
+      "original_description": "profane: SOB",
+      "start": 1991.62
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 2011.49,
+      "id": 24,
+      "original_description": "profane: bas****",
+      "start": 2010.74
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 2365.93,
+      "id": 25,
+      "original_description": "profane: butthead",
+      "start": 2365.04
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 2475.79,
+      "id": 26,
+      "original_description": "profane: sh",
+      "start": 2475
+    },
+    {
+      "action_type": "skip",
+      "category": "nudity",
+      "end": 2516.89,
+      "id": 27,
+      "original_description": "sex: peeping tom",
+      "start": 2499.08
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 2541.54,
+      "id": 28,
+      "original_description": "profane: damn",
+      "start": 2541.22
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 2668.64,
+      "id": 29,
+      "original_description": "profane: OMG",
+      "start": 2668.14
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 2827.47,
+      "id": 30,
+      "original_description": "profane: hell",
+      "start": 2827.27
+    },
+    {
+      "action_type": "skip",
+      "category": "nudity",
+      "end": 2849.48,
+      "id": 31,
+      "original_description": "sex: grabbing thigh",
+      "start": 2848
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 2966.99,
+      "id": 32,
+      "original_description": "profane: My G",
+      "start": 2965.54
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 2978.24,
+      "id": 33,
+      "original_description": "profane: damn",
+      "start": 2977.69
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 3127.68,
+      "id": 34,
+      "original_description": "profane: a**",
+      "start": 3126.79
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 3201.09,
+      "id": 35,
+      "original_description": "profane: hell",
+      "start": 3200.77
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 3397.04,
+      "id": 36,
+      "original_description": "profane: Jesus",
+      "start": 3396.27
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 3642.85,
+      "id": 37,
+      "original_description": "profane: butthead",
+      "start": 3641.99
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 3791.99,
+      "id": 38,
+      "original_description": "profane: God",
+      "start": 3791.49
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 3824,
+      "id": 39,
+      "original_description": "profane: Jesus",
+      "start": 3823.2
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 3956.99,
+      "id": 40,
+      "original_description": "profane: OMG",
+      "start": 3956.2
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 4049.75,
+      "id": 41,
+      "original_description": "profane: s***",
+      "start": 4048.2
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 4079.89,
+      "id": 42,
+      "original_description": "profane: SOB",
+      "start": 4078.6
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 4094.5,
+      "id": 43,
+      "original_description": "profane: OMG",
+      "start": 4093.5
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 4106.31,
+      "id": 44,
+      "original_description": "profane: OMG",
+      "start": 4104.62
+    },
+    {
+      "action_type": "skip",
+      "category": "nudity",
+      "end": 4416.2,
+      "id": 45,
+      "original_description": "sex: touch bra",
+      "start": 4410.52
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 4438.39,
+      "id": 46,
+      "original_description": "profane: damn, part of story",
+      "start": 4437.8
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 4445,
+      "id": 47,
+      "original_description": "profane: GD",
+      "start": 4444.21
+    },
+    {
+      "action_type": "skip",
+      "category": "substance abuse",
+      "end": 4709.56,
+      "id": 48,
+      "original_description": "alcohol: drinking",
+      "start": 4674.68
+    },
+    {
+      "action_type": "skip",
+      "category": "substance abuse",
+      "end": 4709.56,
+      "id": 49,
+      "original_description": "alcohol: drinking and smoking",
+      "start": 4698.15
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 4701.97,
+      "id": 50,
+      "original_description": "profane",
+      "start": 4701.27
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 4824.09,
+      "id": 51,
+      "original_description": "profane: SOB",
+      "start": 4822
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 4825.92,
+      "id": 52,
+      "original_description": "profane: a**",
+      "start": 4825.01
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 4843.05,
+      "id": 53,
+      "original_description": "profane: ba****",
+      "start": 4841.85
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 4864.06,
+      "id": 54,
+      "original_description": "profane: hell",
+      "start": 4863.34
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 4866.7,
+      "id": 55,
+      "original_description": "profane: spook",
+      "start": 4866
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 4872.87,
+      "id": 56,
+      "original_description": "profane: spook, peckerwood",
+      "start": 4871.03
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 4913.58,
+      "id": 57,
+      "original_description": "profane: damn",
+      "start": 4912.87
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 4961.87,
+      "id": 58,
+      "original_description": "profane: damn",
+      "start": 4960.97
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 5477.84,
+      "id": 59,
+      "original_description": "profane: damn",
+      "start": 5477.34
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 5483.2,
+      "id": 60,
+      "original_description": "profane: damn",
+      "start": 5482.5
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 5487.51,
+      "id": 61,
+      "original_description": "profane: damn damn",
+      "start": 5486.21
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 5826.6,
+      "id": 62,
+      "original_description": "profane: damn",
+      "start": 5825.81
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 6216.71,
+      "id": 63,
+      "original_description": "profane: ba****",
+      "start": 6215.42
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 6332.17,
+      "id": 64,
+      "original_description": "profane: hell, part of story",
+      "start": 6331.06
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 6459.22,
+      "id": 65,
+      "original_description": "profane: hell",
+      "start": 6458.8
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 6525.42,
+      "id": 66,
+      "original_description": "profane: hell",
+      "start": 6524.51
+    },
+    {
+      "action_type": "mute",
+      "category": "language",
+      "end": 6677.24,
+      "id": 67,
+      "original_description": "profane: a**",
+      "start": 6676.34
+    }
+  ],
+  "genre": "مغامرة, كوميديا, خيال علمي",
+  "pg": "+7",
+  "platforms": {
+    "stremio": {
+      "id": "tt0088763",
+      "url": "https://web.stremio.com/#/detail/movie/tt0088763/tt0088763"
+    }
+  },
+  "poster_url": "https://image.tmdb.org/t/p/w342/hHluN6hbekvzOYh45UGfnNq5R2p.jpg",
+  "title": "Back to the Future",
+  "type": "movie",
+  "year": 1985
+}
