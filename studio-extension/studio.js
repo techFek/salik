@@ -993,7 +993,9 @@
     const handoff = {
       at: Date.now(), title: els.filmTitle.value.trim(),
       imdb: id ? id.imdb : '', season: Number(document.getElementById('stSeason').value) || null, episode: Number(document.getElementById('stEpisode').value) || null,
-      filters: filtersPayload()
+      filters: filtersPayload(),
+      release: document.getElementById('stRelease').value,
+      runtimeSec: (isFinite(stEls.video.duration) && stEls.video.duration > 0) ? Math.round(stEls.video.duration * 10) / 10 : null   // the reviewed copy (Stremio stream or platform tab)
     };
     try{
       localStorage.setItem('salikStudioHandoff', JSON.stringify(handoff));
@@ -1524,7 +1526,7 @@
   const stEls = {
     imdb: document.getElementById('stImdb'), season: document.getElementById('stSeason'), episode: document.getElementById('stEpisode'),
     fetch: document.getElementById('stFetchSubs'), enSel: document.getElementById('stEnSel'), arSel: document.getElementById('stArSel'),
-    useEn: document.getElementById('stUseEn'), url: document.getElementById('stVideoUrl'), play: document.getElementById('stPlay'),
+    useEn: document.getElementById('stUseEn'), release: document.getElementById('stRelease'), url: document.getElementById('stVideoUrl'), play: document.getElementById('stPlay'),
     status: document.getElementById('stStatus'), player: document.getElementById('stPlayer'), video: document.getElementById('stVideo'),
     clock: document.getElementById('stClock'), track: document.getElementById('stTrack'), err: document.getElementById('stErr'),
   };
@@ -1548,7 +1550,9 @@
     try{
       const data = await (await fetch(`${ST_SUBS_ADDON}/subtitles/${path}.json`)).json();
       const list = (data.subtitles || []);
-      const label = s => (s.subtitleFileName || s.movieReleaseName || s.id) + (/sdh|hearing/i.test(s.subtitleFileName||'') ? '  [SDH]' : '');
+      const label = s => (s.subtitleFileName || s.movieReleaseName || s.id) + (/sdh|hearing/i.test(s.subtitleFileName||'') ? '  [SDH]' : '')
+        + (s.fpsMilli ? `  · ${(s.fpsMilli / 1000).toFixed(3)} fps` : '');
+      list.forEach(s => { stSubInfo[s.url] = { release: s.movieReleaseName || s.subtitleFileName || '', fps: s.fpsMilli ? s.fpsMilli / 1000 : null }; });
       const fill = (sel, lang) => {
         const items = list.filter(s => s.lang === lang)
           .sort((a,b) => (/sdh/i.test(a.subtitleFileName||'') - /sdh/i.test(b.subtitleFileName||'')));
@@ -1556,6 +1560,7 @@
         return items.length;
       };
       const en = fill(stEls.enSel, 'eng'), ar = fill(stEls.arSel, 'ara');
+      stAutoRelease();
       stEls.useEn.disabled = !en;
       stEls.status.textContent = `${en} English, ${ar} Arabic. Pick the ones named like your stream's release (same cut = same timing).`;
       if(ar) stLoadTrack('ar');
@@ -1563,6 +1568,27 @@
       stEls.status.textContent = 'Could not reach the subtitles add-on: ' + (e.message || e);
     }
   }
+
+  /* Release of each subtitle (from the OpenSubtitles add-on: movieReleaseName, fpsMilli). The English one the
+     timings come from sets "Timings made on" until you pick it yourself. */
+  const stSubInfo = {};
+  let stReleaseManual = false;
+  function stGuessRelease(name, fps){
+    const k = String(name || '').toLowerCase().replace(/[\s.-]+/g, '');
+    if(fps && Math.abs(fps - 25) < 0.01) return 'dvd_pal';
+    if(fps && Math.abs(fps - 24) < 0.001) return 'bluray24';
+    if(/pal/.test(k)) return 'dvd_pal';
+    if(/blu|bdrip|brrip|remux|uhd/.test(k)) return 'bluray';
+    if(/dvd/.test(k)) return 'dvd_ntsc';
+    return 'webdl';
+  }
+  function stAutoRelease(){
+    if(stReleaseManual) return;
+    const info = stSubInfo[stEls.enSel.value];
+    if(info) stEls.release.value = stGuessRelease(info.release, info.fps);
+  }
+  stEls.release.addEventListener('change', () => { stReleaseManual = true; hasUnsavedChanges = true; persist(); });
+  stEls.enSel.addEventListener('change', stAutoRelease);
 
   const stTexts = {};   // url -> srt text, saved with the project so it works again without the add-on
   async function stFetchSrt(url){
@@ -1578,7 +1604,8 @@
     const keep = {};
     [stEls.enSel.value, stEls.arSel.value].forEach(u => { if(u && stTexts[u]) keep[u] = stTexts[u]; });
     return { imdb: stEls.imdb.value, season: stEls.season.value, episode: stEls.episode.value, videoUrl: stEls.url.value,
-      en: opts(stEls.enSel), ar: opts(stEls.arSel), enSel: stEls.enSel.value, arSel: stEls.arSel.value, track: stEls.track.value, texts: keep };
+      en: opts(stEls.enSel), ar: opts(stEls.arSel), enSel: stEls.enSel.value, arSel: stEls.arSel.value, track: stEls.track.value, texts: keep,
+      release: stEls.release.value, releaseManual: stReleaseManual, subInfo: stSubInfo };
   }
 
   function stRestore(st){
@@ -1589,6 +1616,9 @@
     fill(stEls.enSel, st.en, st.enSel); fill(stEls.arSel, st.ar, st.arSel);
     stEls.useEn.disabled = !stEls.enSel.value;
     Object.assign(stTexts, st.texts || {});
+    Object.assign(stSubInfo, st.subInfo || {});
+    if(st.release) stEls.release.value = st.release;
+    stReleaseManual = !!st.releaseManual;
     if(st.track) stEls.track.value = st.track;
     if(stEls.arSel.value) stLoadTrack('ar');
     if(stEls.track.value === 'en' && stEls.enSel.value) stLoadTrack('en');
