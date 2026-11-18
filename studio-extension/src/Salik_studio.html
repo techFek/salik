@@ -261,7 +261,7 @@
           <button class="full small" id="stTabLocal" style="margin-top:6px;display:none;">↩ Back to the Stremio player</button>
           <p id="stTabStatus" style="font-size:11.5px;color:var(--ink-faint);margin:6px 0 0;"></p>
         </div>
-        <input type="file" id="stTimingsFile" accept=".json,application/json" style="display:none;">
+        <input type="file" id="stTimingsFile" accept=".json,.skp,.mcf,.vtt,.txt" style="display:none;">
         <p id="stStatus" style="font-size:11.5px;color:var(--ink-faint);line-height:1.6;margin:8px 0 0;"></p>
       </div>
 
@@ -2273,12 +2273,109 @@
 
   /* Timings made elsewhere (importer review page → "تنزيل JSON", a library/<title>.json, the importer's
      unified JSON, or a plain array of filters) become table rows. */
+  /* The file's sync moment (VideoSkip screenshot / MCF START): jump there, compare with your video, then shift the rows
+     with "Sync to platform cut" if the picture is not the same moment. */
+  function stShowSkipReference(ref){
+    let box = document.getElementById('stSkipRef');
+    if(!box){
+      box = document.createElement('div'); box.id = 'stSkipRef';
+      box.style.cssText = 'margin-top:8px;border:1px solid var(--line);border-radius:4px;padding:8px;font-size:12px;line-height:1.6;color:var(--ink-dim);';
+      document.getElementById('stLoadTimings').after(box);
+    }
+    box.innerHTML = `<b>Sync moment in the file:</b> ${fmtTime(ref.time)} — ${escapeHtmlSafe(ref.desc || '')}`
+      + (ref.image ? `<img src="${ref.image}" style="display:block;width:100%;margin-top:6px;border-radius:3px;">` : '')
+      + `<button class="full small" id="stGoRef" style="margin-top:6px;">⏩ Go to ${fmtTime(ref.time)} in the video</button>`;
+    document.getElementById('stGoRef').onclick = () => {
+      const v = stEls.video; if(!v.src){ toast('Open the video first.'); return; }
+      v.pause(); v.currentTime = ref.time;
+    };
+  }
+
+  /* VideoSkip (.skp) and MovieContentFilter (.mcf) → the same shape as a plain filters array (+ the sync moment).
+     Same reading as importer/importer.js in the Salik repo. */
+  function stSkipTime(t){
+    t = String(t).trim().replace(',', '.');
+    if(!/^\d+(:\d{1,2}){0,2}(\.\d+)?$/.test(t)) return NaN;
+    return t.split(':').reduce((a, p) => a * 60 + parseFloat(p), 0);
+  }
+  function stParseSkipFile(text, name){
+    text = String(text).replace(/^\uFEFF/, '').replace(/\r/g, '');
+    const r2 = n => Math.round(n * 100) / 100;
+    const out = { filters: [], reference: null, other: 0 };
+    if(/^WEBVTT\b/.test(text)){                       // MovieContentFilter
+      const CAT = { sex:'nudity', nudity:'nudity', violence:'violence', language:'language', drugs:'substance abuse' };
+      const GROUP = {
+        sex: 'sex adultery analSex coitus kissing masturbation objectification oralSex premaritalSex promiscuity prostitution sexualDialogue',
+        nudity: 'nudity bareButtocks exposedGenitalia fullNudity toplessness',
+        violence: 'violence choking crueltyToAnimals culturalViolence desecration emotionalViolence kicking massacre murder punching rape slapping slavery stabbing torture warfare weapons hemophobia emetophobia',
+        language: 'language blasphemy nameCalling swearing vulgarity',
+        drugs: 'drugs alcohol antipsychotics cigarettes depressants hallucinogens stimulants gambling'
+      };
+      const of = {}; Object.entries(GROUP).forEach(([g, list]) => list.split(' ').forEach(c => of[c] = g));
+      const lines = text.split('\n');
+      for(let i = 1; i < lines.length; i++){
+        const cue = lines[i].match(/^\s*(\S+)\s+-->\s+(\S+)/);
+        const kv = lines[i].match(/^START\s+(\S+)/);
+        if(kv && !out.reference) out.reference = { time: r2(stSkipTime(kv[1])), desc: 'Start of the film (after the opening logos)' };
+        if(!cue) continue;
+        const start = stSkipTime(cue[1]), end = stSkipTime(cue[2]);
+        while(i + 1 < lines.length && lines[i + 1].trim() !== ''){
+          const [body, ...comment] = lines[++i].split(' # ');
+          const [cat, , channel = 'both'] = body.trim().split('=');
+          const g = of[cat];
+          if(!g || !(end > start)){ out.other++; continue; }
+          const action = g === 'language' || cat === 'sexualDialogue' || channel === 'audio' ? 'mute' : channel === 'video' ? 'blur' : 'skip';
+          out.filters.push({ start: r2(start), end: r2(end), category: CAT[g], description: [cat, comment.join(' # ').trim()].filter(Boolean).join(': '), action_type: action, verified: false });
+        }
+      }
+      return out;
+    }
+    // VideoSkip: "0:01:02.5 --> 0:01:05 sex 2 (note)" or the label on the next line; a time + text alone = the screenshot moment
+    const PREFIX = [['nud','nudity'],['nak','nudity'],['sex','nudity'],['kis','nudity'],['gor','violence'],['blo','violence'],['vio','violence'],['fig','violence'],
+      ['gun','violence'],['kil','violence'],['pro','language'],['cur','language'],['swe','language'],['lan','language'],['wor','language'],['bla','language'],
+      ['alc','substance abuse'],['dru','substance abuse'],['smo','substance abuse'],['cig','substance abuse'],['sub','substance abuse']];
+    const MUTE = ['audio','word','speech','sound'], BLANK = ['video','image','blank','img'];
+    let cues = 0;
+    for(const block of text.split(/\n\s*\n/)){
+      const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+      if(!lines.length) continue;
+      const cue = lines[0].match(/^(\S+)\s*-->\s*(\S+)\s*(.*)$/);
+      if(!cue){
+        const t = stSkipTime(lines[0]);
+        if(!isNaN(t) && !out.reference) out.reference = { time: r2(t), desc: (lines.slice(1).find(l => !/^data:image/.test(l)) || 'VideoSkip screenshot').slice(0, 200) };
+        continue;
+      }
+      cues++;
+      const start = stSkipTime(cue[1]), end = stSkipTime(cue[2]);
+      const labelLine = (cue[3] || lines[1] || '').trim();
+      const note = (labelLine.match(/\(([^)]*)\)/) || [])[1] || '';
+      const words = labelLine.replace(/\([^)]*\)/g, ' ').replace(/\[[^\]]*\]/g, ' ').toLowerCase().split(/\s+/).filter(Boolean);
+      const label = words.find(w => !/^\d$/.test(w) && !MUTE.includes(w) && !BLANK.includes(w) && w !== 'blur') || 'other';
+      const hit = PREFIX.find(([p]) => label.startsWith(p));
+      if(!hit || !(end > start)){ out.other++; continue; }
+      let action = 'skip';
+      if(words.some(w => MUTE.includes(w)) || hit[1] === 'language') action = 'mute';
+      else if(words.includes('blur') || words.some(w => BLANK.includes(w))) action = 'blur';
+      out.filters.push({ start: r2(start), end: r2(end), category: hit[1], description: [label, note].filter(Boolean).join(': '), action_type: action, verified: false });
+    }
+    if(!cues) throw new Error('no "start --> end" lines found');
+    const shot = text.match(/^data:image\/(?:png|jpe?g|webp);base64,[A-Za-z0-9+/=]+$/m);
+    if(shot && out.reference) out.reference.image = shot[0];
+    return out;
+  }
+
   document.getElementById('stLoadTimings').addEventListener('click', () => document.getElementById('stTimingsFile').click());
   document.getElementById('stTimingsFile').addEventListener('change', async (e) => {
     const f = e.target.files[0]; e.target.value = '';
     if(!f) return;
     let data;
-    try{ data = JSON.parse(await f.text()); }catch(err){ toast('Not a JSON file.'); return; }
+    const text = await f.text();
+    try{ data = JSON.parse(text); }
+    catch(err){
+      // VideoSkip skip file (.skp) or MovieContentFilter (.mcf): read here, nothing uploaded
+      try{ data = stParseSkipFile(text, f.name); }
+      catch(e2){ toast('Not a timings file (JSON, VideoSkip .skp or MovieContentFilter .mcf): ' + e2.message); return; }
+    }
     const UNI = { sex: 'nudity', nudity: 'nudity', violence: 'violence', gore: 'violence', profanity: 'language', drugs: 'substance abuse' };
     let list = [];
     if(Array.isArray(data)) list = data;
@@ -2300,7 +2397,10 @@
     if(imdb && !document.getElementById('stImdb').value) document.getElementById('stImdb').value = imdb;
     render(); hasUnsavedChanges = true; persist();
     stApplyEl.checked = true;
-    toast(`Loaded ${fresh.length} timings. Open the video: "Apply filters while playing" is on.`);
+    toast(`Loaded ${fresh.length} timings. Open the video: "Apply filters while playing" is on.`
+      + (data.other ? ` (${data.other} outside Salik's groups left out.)` : '')
+      + (data.reference ? ` Sync moment in the file: ${fmtTime(data.reference.time)} — ${data.reference.desc}` : ''));
+    if(data.reference) stShowSkipReference(data.reference);
   });
 
   /* =========================================================
