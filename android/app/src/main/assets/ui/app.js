@@ -11,7 +11,7 @@ import { GUIDE } from "./guide.js";
 
 const native = window.SalikApp || {
   openUrl: (u) => window.open(u), openExternal: (u) => window.open(u),
-  setEngineEnabled() {}, setYoutubeTv() {}, setStremioServer() {}, setGenderBlur() {}, shareLog() {}, exitApp() {}
+  setEngineEnabled() {}, setYoutubeTv() {}, setStremioServer() {}, setGenderBlur() {}, setNsfwBlur() {}, shareLog() {}, exitApp() {}
 };
 
 const EN = LANG === "en";
@@ -79,6 +79,8 @@ const STR = {
   subCensorHint: ["يُخفي الكلمات غير اللائقة من نص الترجمة", "Hides inappropriate words in subtitles"],
   hideFemale: ["حجب الظهور النسائي", "Hide women"],
   hideMale: ["حجب الظهور الرجالي", "Hide men"],
+  hideNsfw: ["حجب المشاهد الجنسية بالذكاء الاصطناعي", "AI blur of sexual scenes"],
+  nsfwHint: ["يموّه الفيديو تلقائيًا عند ظهور عُري أو لقطة جنسية أو ملابس فاضحة، حتى لو الفيلم مش في مكتبة سالك. يعمل على يوتيوب وDailymotion وStremio فقط، وقد يخطئ أو يتأخر لحظة", "Blurs the video by itself when nudity, a sexual shot or revealing clothes appear, even for titles not in Salik's library. YouTube, Dailymotion & Stremio only; it can miss or lag a moment"],
   experimental: ["تجريبي", "Experimental"],
   genderHint: ["يموّه الفيديو تلقائيًا عند ظهور الوجه. يعمل على يوتيوب وDailymotion وStremio فقط، وقد يخطئ أو يتأخر لحظة، ويستهلك البطارية", "Blurs the video automatically when a face appears. YouTube, Dailymotion & Stremio only; it can miss or lag a moment and uses more battery"],
   genderOn: ["{g}: مفعّل (تجريبي، يوتيوب وDailymotion وStremio فقط)", "{g}: on (experimental, YouTube, Dailymotion & Stremio only)"],
@@ -513,6 +515,9 @@ async function renderSettings() {
         ${["hideFemale", "hideMale"].map((k) => `<button class="group-row ${a[k] ? "on" : ""}" data-nav data-fid="${k}" data-gender="${k}">
           <span class="gr-main"><span class="gr-name">${T(k)} <span class="beta">${T("experimental")}</span></span><br><span class="gr-sub">${T("genderHint")}</span></span>
           <i class="toggle ${a[k] ? "on" : ""}"></i></button>`).join("")}
+        <button class="group-row ${a.hideNsfw ? "on" : ""}" data-nav data-fid="hideNsfw" data-nsfw>
+          <span class="gr-main"><span class="gr-name">${T("hideNsfw")} <span class="beta">${T("experimental")}</span></span><br><span class="gr-sub">${T("nsfwHint")}</span></span>
+          <i class="toggle ${a.hideNsfw ? "on" : ""}"></i></button>
       </div>
       <div>
         <div class="panel"><h3>${T("language")}</h3>
@@ -750,6 +755,13 @@ document.addEventListener("click", async (e) => {
     toast(T(v ? "saved" : "cleared")); rerender(el.dataset.fid); return;
   }
   if (d.ytTv !== undefined) { const on = !S.app?.youtubeTv; native.setYoutubeTv(on); S.app = { ...(S.app || {}), youtubeTv: on }; rerender(el.dataset.fid); return; }
+  if (d.nsfw !== undefined) {
+    const a = S.app || (S.app = {});
+    a.hideNsfw = !a.hideNsfw;
+    native.setNsfwBlur(!!a.hideNsfw);
+    toast(T(a.hideNsfw ? "genderOn" : "genderOff", { g: T("hideNsfw") }));
+    rerender(el.dataset.fid); return;
+  }
   if (d.gender) {
     const a = S.app || (S.app = {});
     a[d.gender] = !a[d.gender];

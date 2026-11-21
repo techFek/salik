@@ -1,6 +1,6 @@
 (function () {
   var cfg = window.__SALIK_GENDER;
-  if (!cfg || (!cfg.female && !cfg.male) || window.__salikGenderStarted) return;
+  if (!cfg || (!cfg.female && !cfg.male && !cfg.nsfw) || window.__salikGenderStarted) return;
   if (typeof SalikNative === "undefined") return;
   window.__salikGenderStarted = true;
 
@@ -66,6 +66,12 @@
     return (face.gender === "female" && cfg.female) || (face.gender === "male" && cfg.male);
   }
 
+  /* Sexual / revealing picture (nsfwjs): porn + hentai + sexy together, so a strict line for family viewing. */
+  var NSFW_LINE = 0.6;
+  function nsfwHit(n) {
+    return !!(cfg.nsfw && n && ((n.porn || 0) + (n.hentai || 0) + (n.sexy || 0)) >= NSFW_LINE);
+  }
+
   function tick() {
     var v = activeVideo();
     if (!v) { if (overlay && blurred) overlay.style.display = "none", blurred = false; return; }
@@ -81,7 +87,7 @@
     var id = "g" + (nextId++);
     waiting = { id: id, cb: function (res) {
       if (!res || res.busy || res.timeout || res.error || res.off) return;
-      var hit = (res.faces || []).some(hidden);
+      var hit = (res.faces || []).some(hidden) || nsfwHit(res.nsfw);
       if (hit) { cleanFrames = 0; lastHitAt = Date.now(); setBlur(v, true); }
       else if (blurred && ++cleanFrames >= CLEAR_AFTER && Date.now() - lastHitAt > HOLD_MS) setBlur(v, false);
     } };
@@ -90,5 +96,5 @@
   }
 
   setInterval(tick, INTERVAL_MS);
-  console.log("[Salik] experimental gender blur active (female=" + !!cfg.female + ", male=" + !!cfg.male + ")");
+  console.log("[Salik] experimental auto blur active (female=" + !!cfg.female + ", male=" + !!cfg.male + ", nsfw=" + !!cfg.nsfw + ")");
 })();

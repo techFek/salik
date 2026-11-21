@@ -329,13 +329,14 @@ class MainActivity : Activity() {
     private fun installGenderBlur() {
         val female = settings.getBoolean("hideFemale", false)
         val male = settings.getBoolean("hideMale", false)
-        if (!female && !male) return
+        val nsfw = settings.getBoolean("hideNsfw", false)
+        if (!female && !male && !nsfw) return
         val b = bridge ?: return
-        genderDetector = GenderDetector(this, root).also { b.genderDetector = it }
-        val cfg = org.json.JSONObject().put("female", female).put("male", male).put("ar", !Lang.isEnglish(this))
+        genderDetector = GenderDetector(this, root, faces = female || male, nsfw = nsfw).also { b.genderDetector = it }
+        val cfg = org.json.JSONObject().put("female", female).put("male", male).put("nsfw", nsfw).put("ar", !Lang.isEnglish(this))
         val js = "window.__SALIK_GENDER=$cfg;\n" + assets.open("salik/genderblur.js").bufferedReader().use { it.readText() }
         WebViewCompat.addDocumentStartJavaScript(webView, js, SalikConfig.GENDER_BLUR_ORIGINS + listOfNotNull(SalikConfig.stremioServerOrigin(this)?.takeIf { it.startsWith("https://") }))
-        SalikLog.d(TAG, "Experimental gender blur on: female=$female male=$male")
+        SalikLog.d(TAG, "Experimental auto blur on: female=$female male=$male nsfw=$nsfw")
     }
 
     private fun exitFullscreen() {
