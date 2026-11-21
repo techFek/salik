@@ -54,6 +54,7 @@ class MainActivity : Activity() {
     private lateinit var backend: SalikBackend
     private var bridge: ExtensionBridge? = null
     private var genderDetector: GenderDetector? = null
+    private var cursor: TvCursor? = null
     private var customView: View? = null
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
     private var documentStartSupported = false
@@ -75,6 +76,7 @@ class MainActivity : Activity() {
         webView = WebView(this)
         root.addView(webView, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
         setContentView(root)
+        if (TvCursor.isTv(this)) cursor = TvCursor(this, root, webView).also { it.enabled = settings.getBoolean("tvCursor", true) }
 
         spoofJs = assets.open("salik/spoof.js").bufferedReader().use { it.readText() }
         diagJs = assets.open("salik/diag.js").bufferedReader().use { it.readText() }
@@ -126,6 +128,7 @@ class MainActivity : Activity() {
     private fun setTvMode(on: Boolean) {
         if (tvMode == on) return
         tvMode = on
+        if (on) cursor?.hide()
         webView.settings.userAgentString = if (on) tvUa else desktopUa
         applyUaMetadata()
         SalikLog.d(TAG, "YouTube TV mode = $on")
@@ -258,6 +261,7 @@ class MainActivity : Activity() {
             override fun onShowCustomView(view: View, callback: CustomViewCallback) {
                 if (customView != null) { callback.onCustomViewHidden(); return }
                 customView = view
+                cursor?.hide()
                 customViewCallback = callback
                 root.addView(view, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
                 webView.visibility = View.GONE
@@ -344,12 +348,14 @@ class MainActivity : Activity() {
 
     private fun showMenu() {
         val t = { ar: String, en: String -> Lang.t(this, ar, en) }
-        val items = arrayOf(
+        val c = cursor
+        val items = listOfNotNull(
             t("العودة إلى الرئيسية", "Back to home"),
             t("إرسال سجل التشخيص", "Send diagnostic log"),
             if (engineEnabled) t("إيقاف محرك الفلترة مؤقتًا", "Turn off the filtering engine") else t("تشغيل محرك الفلترة", "Turn on the filtering engine"),
-            t("إغلاق التطبيق", "Exit app")
-        )
+            t("إغلاق التطبيق", "Exit app"),
+            c?.let { if (it.enabled) t("إخفاء مؤشر الماوس", "Hide the mouse pointer") else t("إظهار مؤشر الماوس", "Show the mouse pointer") }
+        ).toTypedArray<CharSequence>()
         AlertDialog.Builder(this)
             .setTitle("Salik")
             .setItems(items) { _, which ->
@@ -361,10 +367,21 @@ class MainActivity : Activity() {
                         recreate()
                     }
                     3 -> finishAffinity()
+                    4 -> if (c != null) {
+                        c.enabled = !c.enabled
+                        settings.edit().putBoolean("tvCursor", c.enabled).apply()
+                    }
                 }
             }
             .setNegativeButton(t("رجوع", "Back"), null)
             .show()
+    }
+
+    /** TV remote: arrows/OK drive the mouse pointer on websites (not in fullscreen video or YouTube TV, which use the D-pad). */
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        val c = cursor
+        if (c != null && customView == null && !tvMode && c.handle(event)) return true
+        return super.dispatchKeyEvent(event)
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
