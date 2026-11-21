@@ -109,6 +109,7 @@ class HomeActivity : Activity() {
         .put("stremioServer", settings.getString("stremioServer", "") ?: "")
         .put("hideFemale", settings.getBoolean("hideFemale", false))
         .put("hideMale", settings.getBoolean("hideMale", false))
+        .put("hideNsfw", settings.getBoolean("hideNsfw", false))
         .put("stremioOrigin", SalikConfig.stremioServerOrigin(this) ?: "")
         .put("stremioStreaming", SalikConfig.stremioStreamingUrl(this) ?: "")
 
@@ -188,6 +189,12 @@ class HomeActivity : Activity() {
         @JavascriptInterface
         fun setGenderBlur(female: Boolean, male: Boolean) {
             settings.edit().putBoolean("hideFemale", female).putBoolean("hideMale", male).apply()
+        }
+
+        /** Experimental AI blur of sexual scenes (nsfwjs), same sites as the gender blur. */
+        @JavascriptInterface
+        fun setNsfwBlur(on: Boolean) {
+            settings.edit().putBoolean("hideNsfw", on).apply()
         }
 
         /** Address of the user's own Stremio server ("192.168.1.10:8080"), "" to clear. */

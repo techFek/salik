@@ -3,4 +3,6 @@ Salik experimental "hide women / hide men" detection uses only open-source compo
   (bundles TensorFlow.js, Apache-2.0)
 - MediaPipe BlazeFace face detector (Apache-2.0) - models/blazeface.*
 - HSE FaceRes face description model, age/gender (Apache-2.0) - models/faceres.*
-No HaramBlur code or models are used.
+- nsfwjs 4.x MobileNetV2Mid model by Infinite Red / Gant Laborde (MIT) - models/nsfw.*, see LICENSE-nsfwjs.txt
+  (used for "AI blur of sexual scenes")
+No HaramBlur code or models are used (HaramBlur is AGPL-3.0; Salik is MIT).

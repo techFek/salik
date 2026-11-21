@@ -21,7 +21,7 @@ import org.json.JSONObject
  * (assets/detector: Human library, BlazeFace, FaceRes). The player page sends small JPEG frames over
  * the native bridge; we answer with the faces found. One frame at a time; extra frames are dropped.
  */
-class GenderDetector(private val activity: Activity, private val parent: ViewGroup) {
+class GenderDetector(private val activity: Activity, private val parent: ViewGroup, private val faces: Boolean = true, private val nsfw: Boolean = false) {
 
     companion object {
         private const val TAG = "SalikGender"
@@ -61,7 +61,7 @@ class GenderDetector(private val activity: Activity, private val parent: ViewGro
             alpha = 0f
         }
         parent.addView(webView, FrameLayout.LayoutParams(2, 2))
-        webView!!.loadUrl(URL)
+        webView!!.loadUrl("$URL?faces=${if (faces) 1 else 0}&nsfw=${if (nsfw) 1 else 0}")
         SalikLog.d(TAG, "Loading detector")
     }
 
@@ -73,7 +73,8 @@ class GenderDetector(private val activity: Activity, private val parent: ViewGro
         }
         val id = "d${nextId++}"
         pending[id] = done
-        webView?.evaluateJavascript("window.salikDetect(${JSONObject.quote(id)}, ${JSONObject.quote(dataUrl)})", null)
+        val opts = JSONObject().put("faces", faces).put("nsfw", nsfw)
+        webView?.evaluateJavascript("window.salikDetect(${JSONObject.quote(id)}, ${JSONObject.quote(dataUrl)}, $opts)", null)
         ui.postDelayed({ pending.remove(id)?.invoke(JSONObject().put("timeout", true)) }, 8000)
     }
 
