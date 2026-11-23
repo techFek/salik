@@ -3,19 +3,10 @@
   "description": "ساشا، متسلقة جبال حزينة تسافر إلى براري أستراليا بحثًا عن العزلة، لتجد نفسها مطاردة بلا هوادة من قبل أحد السكان المحليين المخادعين والساديين في لعبة مطاردة ملتوية.",
   "filters": [
     {
-      "action_type": "skip",
-      "category": "nudity",
-      "end": 105,
-      "id": 1,
-      "original_description": "بوس: زوج يقبل زوجته",
-      "reason": "لقطة بصرية إيحائية غير مناسبة عائلياً",
-      "start": 93
-    },
-    {
       "action_type": "mute",
       "category": "Language",
       "end": 158.47,
-      "id": 2,
+      "id": 1,
       "original_description": "damn",
       "reason": "الفاظ خارجة",
       "start": 158.08
@@ -24,7 +15,7 @@
       "action_type": "mute",
       "category": "Language",
       "end": 161.71,
-      "id": 3,
+      "id": 2,
       "original_description": "ass",
       "reason": "الفاظ خارجة",
       "start": 161.29
@@ -33,7 +24,7 @@
       "action_type": "mute",
       "category": "Language",
       "end": 200,
-      "id": 4,
+      "id": 3,
       "original_description": "goddamn",
       "reason": "الفاظ خارجة",
       "start": 199.62
@@ -42,7 +33,7 @@
       "action_type": "mute",
       "category": "Language",
       "end": 263.33,
-      "id": 5,
+      "id": 4,
       "original_description": "shit",
       "reason": "الفاظ خارجة",
       "start": 263.1
@@ -51,7 +42,7 @@
       "action_type": "mute",
       "category": "Language",
       "end": 367.61,
-      "id": 6,
+      "id": 5,
       "original_description": "fucking",
       "reason": "الفاظ خارجة",
       "start": 367.3
@@ -60,7 +51,7 @@
       "action_type": "mute",
       "category": "Language",
       "end": 484.62,
-      "id": 7,
+      "id": 6,
       "original_description": "shit",
       "reason": "الفاظ خارجة",
       "start": 484.02
@@ -69,7 +60,7 @@
       "action_type": "mute",
       "category": "Language",
       "end": 495.67,
-      "id": 8,
+      "id": 7,
       "original_description": "shit",
       "reason": "الفاظ خارجة",
       "start": 494.21
@@ -78,7 +69,7 @@
       "action_type": "mute",
       "category": "Language",
       "end": 778.02,
-      "id": 9,
+      "id": 8,
       "original_description": "shit",
       "reason": "الفاظ خارجة",
       "start": 777.63
@@ -87,34 +78,16 @@
       "action_type": "mute",
       "category": "Language",
       "end": 1050.08,
-      "id": 10,
+      "id": 9,
       "original_description": "fuck",
       "reason": "الفاظ خارجة",
       "start": 1049
     },
     {
-      "action_type": "skip",
-      "category": "Violence",
-      "end": 1148.03626,
-      "id": 11,
-      "original_description": "سلخ حيوان الأيل ",
-      "reason": "الفاظ خارجة",
-      "start": 1141.846071
-    },
-    {
-      "action_type": "skip",
-      "category": "nudity",
-      "end": 1376.196046,
-      "id": 12,
-      "original_description": "عري: بنت تلبس البكيني على الشاطئ",
-      "reason": "الفاظ خارجة",
-      "start": 1369.5861
-    },
-    {
       "action_type": "mute",
       "category": "Language",
       "end": 1501.25,
-      "id": 13,
+      "id": 10,
       "original_description": "fuck",
       "reason": "الفاظ خارجة",
       "start": 1500.88
@@ -123,7 +96,7 @@
       "action_type": "mute",
       "category": "Language",
       "end": 1510.92,
-      "id": 14,
+      "id": 11,
       "original_description": "fuck",
       "reason": "الفاظ خارجة",
       "start": 1509.92
@@ -132,7 +105,7 @@
       "action_type": "mute",
       "category": "Language",
       "end": 1519.9,
-      "id": 15,
+      "id": 12,
       "original_description": "fuck",
       "reason": "الفاظ خارجة",
       "start": 1519.25
@@ -141,7 +114,7 @@
       "action_type": "mute",
       "category": "Language",
       "end": 1520.54,
-      "id": 16,
+      "id": 13,
       "original_description": "fuck",
       "reason": "الفاظ خارجة",
       "start": 1519.9
@@ -150,7 +123,7 @@
       "action_type": "mute",
       "category": "Language",
       "end": 1666.64,
-      "id": 17,
+      "id": 14,
       "original_description": "hell",
       "reason": "الفاظ خارجة",
       "start": 1666.15
@@ -159,7 +132,7 @@
       "action_type": "mute",
       "category": "Language",
       "end": 1848.48,
-      "id": 18,
+      "id": 15,
       "original_description": "fuck",
       "reason": "الفاظ خارجة",
       "start": 1848.04
@@ -168,7 +141,7 @@
       "action_type": "mute",
       "category": "Language",
       "end": 1873.08,
-      "id": 19,
+      "id": 16,
       "original_description": "bullshit",
       "reason": "الفاظ خارجة",
       "start": 1872.76
@@ -177,7 +150,7 @@
       "action_type": "mute",
       "category": "Language",
       "end": 1879.67,
-      "id": 20,
+      "id": 17,
       "original_description": "shit",
       "reason": "الفاظ خارجة",
       "start": 1879.43
@@ -186,25 +159,16 @@
       "action_type": "mute",
       "category": "Language",
       "end": 1910.38,
-      "id": 21,
+      "id": 18,
       "original_description": "shit",
       "reason": "الفاظ خارجة",
       "start": 1909.79
     },
     {
-      "action_type": "skip",
-      "category": "Violence",
-      "end": 2251.073167,
-      "id": 22,
-      "original_description": "قيء",
-      "reason": "لقطة بصرية إيحائية غير مناسبة عائلياً",
-      "start": 2245.116197
-    },
-    {
       "action_type": "mute",
       "category": "Language",
       "end": 2402.12,
-      "id": 23,
+      "id": 19,
       "original_description": "fuck",
       "reason": "الفاظ خارجة",
       "start": 2401.21
@@ -213,241 +177,61 @@
       "action_type": "mute",
       "category": "Language",
       "end": 2403.04,
-      "id": 24,
+      "id": 20,
       "original_description": "fuck",
       "reason": "الفاظ خارجة",
       "start": 2402.12
     },
     {
-      "action_type": "skip",
-      "category": "nudity",
-      "end": 2860.95,
-      "id": 25,
-      "original_description": "Nudity",
-      "reason": "لقطة بصرية إيحائية غير مناسبة عائلياً",
-      "start": 2858.56
-    },
-    {
-      "action_type": "skip",
-      "category": "nudity",
-      "end": 2876.89,
-      "id": 26,
-      "original_description": "Nudity",
-      "reason": "لقطة بصرية إيحائية غير مناسبة عائلياً",
-      "start": 2869.18
-    },
-    {
       "action_type": "mute",
       "category": "Language",
       "end": 2912.19,
-      "id": 27,
+      "id": 21,
       "original_description": "horny",
       "reason": "الفاظ خارجة",
       "start": 2911.68
     },
     {
-      "action_type": "skip",
-      "category": "nudity",
-      "end": 2934.7,
-      "id": 28,
-      "original_description": "Nudity",
-      "reason": "لقطة بصرية إيحائية غير مناسبة عائلياً",
-      "start": 2930.73
-    },
-    {
-      "action_type": "skip",
-      "category": "nudity",
-      "end": 3482.24,
-      "id": 29,
-      "original_description": "Nudity",
-      "reason": "لقطة بصرية إيحائية غير مناسبة عائلياً",
-      "start": 3471
-    },
-    {
-      "action_type": "skip",
-      "category": "Violence",
-      "end": 3503.76,
-      "id": 30,
-      "original_description": "Violence",
-      "reason": "لقطة بصرية إيحائية غير مناسبة عائلياً",
-      "start": 3490.17
-    },
-    {
-      "action_type": "skip",
-      "category": "nudity",
-      "end": 3499.81,
-      "id": 31,
-      "original_description": "Nudity",
-      "reason": "لقطة بصرية إيحائية غير مناسبة عائلياً",
-      "start": 3492.24
-    },
-    {
-      "action_type": "skip",
-      "category": "Violence",
-      "end": 3528.49,
-      "id": 32,
-      "original_description": "Violence",
-      "reason": "لقطة بصرية إيحائية غير مناسبة عائلياً",
-      "start": 3507.99
-    },
-    {
-      "action_type": "skip",
-      "category": "nudity",
-      "end": 3521.68,
-      "id": 33,
-      "original_description": "Nudity",
-      "reason": "لقطة بصرية إيحائية غير مناسبة عائلياً",
-      "start": 3517.15
-    },
-    {
       "action_type": "mute",
       "category": "Language",
       "end": 3534.98,
-      "id": 34,
+      "id": 22,
       "original_description": "god",
       "reason": "الفاظ خارجة",
       "start": 3534.59
     },
     {
-      "action_type": "skip",
-      "category": "nudity",
-      "end": 3707.99,
-      "id": 35,
-      "original_description": "Nudity",
-      "reason": "لقطة بصرية إيحائية غير مناسبة عائلياً",
-      "start": 3703.52
-    },
-    {
       "action_type": "mute",
       "category": "Language",
       "end": 3825.08,
-      "id": 36,
+      "id": 23,
       "original_description": "fuck",
       "reason": "الفاظ خارجة",
       "start": 3824.7
     },
     {
-      "action_type": "skip",
-      "category": "Violence",
-      "end": 3832.1,
-      "id": 37,
-      "original_description": "Violence",
-      "reason": "لقطة بصرية إيحائية غير مناسبة عائلياً",
-      "start": 3824.85
-    },
-    {
-      "action_type": "skip",
-      "category": "Violence",
-      "end": 3908.88,
-      "id": 38,
-      "original_description": "Violence",
-      "reason": "لقطة بصرية إيحائية غير مناسبة عائلياً",
-      "start": 3905.86
-    },
-    {
-      "action_type": "skip",
-      "category": "Violence",
-      "end": 3923.71,
-      "id": 39,
-      "original_description": "Violence",
-      "reason": "لقطة بصرية إيحائية غير مناسبة عائلياً",
-      "start": 3919.46
-    },
-    {
-      "action_type": "skip",
-      "category": "Violence",
-      "end": 3996.36,
-      "id": 40,
-      "original_description": "Violence",
-      "reason": "لقطة بصرية إيحائية غير مناسبة عائلياً",
-      "start": 3991.05
-    },
-    {
       "action_type": "mute",
       "category": "Language",
       "end": 4004.67,
-      "id": 41,
+      "id": 24,
       "original_description": "fuck",
       "reason": "الفاظ خارجة",
       "start": 4003.75
     },
     {
-      "action_type": "skip",
-      "category": "Violence",
-      "end": 4065.99,
-      "id": 42,
-      "original_description": "Violence",
-      "reason": "لقطة بصرية إيحائية غير مناسبة عائلياً",
-      "start": 4043.19
-    },
-    {
-      "action_type": "skip",
-      "category": "Violence",
-      "end": 4072.93,
-      "id": 43,
-      "original_description": "Violence",
-      "reason": "لقطة بصرية إيحائية غير مناسبة عائلياً",
-      "start": 4070.27
-    },
-    {
-      "action_type": "skip",
-      "category": "Violence",
-      "end": 4127.23,
-      "id": 44,
-      "original_description": "Violence",
-      "reason": "لقطة بصرية إيحائية غير مناسبة عائلياً",
-      "start": 4079.5
-    },
-    {
       "action_type": "mute",
       "category": "Language",
       "end": 4182.72,
-      "id": 45,
+      "id": 25,
       "original_description": "hell",
       "reason": "الفاظ خارجة",
       "start": 4182.42
     },
     {
-      "action_type": "skip",
-      "category": "Violence",
-      "end": 4303.85,
-      "id": 46,
-      "original_description": "Violence",
-      "reason": "لقطة بصرية إيحائية غير مناسبة عائلياً",
-      "start": 4299.33
-    },
-    {
-      "action_type": "skip",
-      "category": "Violence",
-      "end": 4323.12,
-      "id": 47,
-      "original_description": "Violence",
-      "reason": "لقطة بصرية إيحائية غير مناسبة عائلياً",
-      "start": 4318.87
-    },
-    {
-      "action_type": "skip",
-      "category": "Violence",
-      "end": 4343.59,
-      "id": 48,
-      "original_description": "Violence",
-      "reason": "لقطة بصرية إيحائية غير مناسبة عائلياً",
-      "start": 4336.39
-    },
-    {
-      "action_type": "skip",
-      "category": "Violence",
-      "end": 4411.28,
-      "id": 49,
-      "original_description": "Violence",
-      "reason": "لقطة بصرية إيحائية غير مناسبة عائلياً",
-      "start": 4349.61
-    },
-    {
       "action_type": "mute",
       "category": "Language",
       "end": 4418.67,
-      "id": 50,
+      "id": 26,
       "original_description": "fuck",
       "reason": "الفاظ خارجة",
       "start": 4417.67
@@ -456,7 +240,7 @@
       "action_type": "mute",
       "category": "Language",
       "end": 4583.99,
-      "id": 51,
+      "id": 27,
       "original_description": "fucking",
       "reason": "الفاظ خارجة",
       "start": 4583.71
@@ -465,34 +249,16 @@
       "action_type": "mute",
       "category": "Language",
       "end": 4590.99,
-      "id": 52,
+      "id": 28,
       "original_description": "fucking",
       "reason": "الفاظ خارجة",
       "start": 4590.64
     },
     {
-      "action_type": "skip",
-      "category": "Violence",
-      "end": 4762.75,
-      "id": 53,
-      "original_description": "Violence",
-      "reason": "لقطة بصرية إيحائية غير مناسبة عائلياً",
-      "start": 4760.37
-    },
-    {
-      "action_type": "skip",
-      "category": "Violence",
-      "end": 4785.91,
-      "id": 54,
-      "original_description": "Violence",
-      "reason": "لقطة بصرية إيحائية غير مناسبة عائلياً",
-      "start": 4776.9
-    },
-    {
       "action_type": "mute",
       "category": "Language",
       "end": 4919.12,
-      "id": 55,
+      "id": 29,
       "original_description": "fuck",
       "reason": "الفاظ خارجة",
       "start": 4916.42
@@ -501,7 +267,7 @@
       "action_type": "mute",
       "category": "Language",
       "end": 5430.15,
-      "id": 56,
+      "id": 30,
       "original_description": "horny",
       "reason": "الفاظ خارجة",
       "start": 5429.76
